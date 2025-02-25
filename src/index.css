@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  font-family: inherit;
+  background-color: #f8fafc;
+}
+
+/* Custom tooltip styling */
+.leaflet-tooltip.custom-tooltip {
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 280px;
+  width: max-content;
+}
+
+/* Remove default leaflet-bar border */
+.leaflet-bar {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Marker pulse animation */
+.leaflet-marker-icon {
+  transition: transform 0.2s ease;
+}
+
+.leaflet-marker-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Attribution control styling */
+.leaflet-control-attribution {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(4px);
+  font-size: 10px !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  margin: 2px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #6b7280 !important;
+  text-decoration: none !important;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+/* Modal scrollbar styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+}
+
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  background-color: #f3f4f6;
+}
