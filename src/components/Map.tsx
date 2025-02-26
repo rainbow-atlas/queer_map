@@ -7,17 +7,21 @@ import {
   Map as MapIcon, Satellite, Locate, Plus, Minus, Settings,
   Building, Info, ExternalLink
 } from 'lucide-react';
+import logo from '../assets/logo.svg';
 
 // Create marker icons with different styles
 const createMarkerIcon = (color: string) => icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="${color}"/>
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
+        fill="${color}"
+      />
     </svg>
   `)}`,
   iconSize: [32, 32],
   iconAnchor: [16, 32],
   popupAnchor: [0, -32],
+  tooltipAnchor: [16, -24]
 });
 
 // Create a special marker for current location
@@ -35,7 +39,7 @@ const createCurrentLocationIcon = () => icon({
 });
 
 const defaultIcon = createMarkerIcon('#000000');
-const satelliteIcon = createMarkerIcon('#ffd1dc');
+const satelliteIcon = createMarkerIcon('#FF1493');
 const currentLocationIcon = createCurrentLocationIcon();
 
 // Function to generate random pastel colors
@@ -136,6 +140,7 @@ const MapControls: React.FC<{
   onZoomOut: () => void;
 }> = ({ onLayerChange, activeLayer, onLocate, onZoomIn, onZoomOut }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.1);
   
   const layers = {
     minimal: {
@@ -149,6 +154,11 @@ const MapControls: React.FC<{
       description: 'Detailed satellite imagery'
     }
   };
+
+  // Update CSS variable when opacity changes
+  useEffect(() => {
+    document.documentElement.style.setProperty('--overlay-opacity', overlayOpacity.toString());
+  }, [overlayOpacity]);
 
   return (
     <div className="fixed bottom-6 right-6 z-[1000]">
@@ -232,6 +242,27 @@ const MapControls: React.FC<{
               </div>
             </div>
 
+            {/* Overlay Opacity Slider (only visible in satellite mode) */}
+            {activeLayer === 'satellite' && (
+              <div className="mb-4 border-b border-gray-200 pb-4">
+                <div className="text-xs font-medium text-gray-500 mb-2">Overlay Brightness</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.5"
+                    step="0.05"
+                    value={overlayOpacity}
+                    onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+                    className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-500 w-8">
+                    {Math.round(overlayOpacity * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Location Button */}
             <button
               onClick={onLocate}
@@ -302,6 +333,7 @@ const Map: React.FC<MapProps> = ({
   const [imageValid, setImageValid] = useState<boolean>(true);
   const [map, setMap] = useState<L.Map | null>(null);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.1);
 
   const layers = {
     minimal: {
@@ -396,253 +428,297 @@ const Map: React.FC<MapProps> = ({
           .pulse-animation {
             animation: pulse 2s ease-in-out infinite;
           }
+          :root {
+            --overlay-opacity: 0.1;
+          }
+          .map-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(255, 255, 255, var(--overlay-opacity));
+            pointer-events: none;
+            z-index: 401;
+          }
         `}
       </style>
-      <MapContainer 
-        center={mapCenter} 
-        zoom={mapZoom} 
-        className="w-full h-full"
-        zoomControl={false}
-        ref={setMap}
-      >
-        <MapUpdater 
+      <div className="relative w-full h-full">
+        <MapContainer 
           center={mapCenter} 
           zoom={mapZoom} 
-          initialBounds={initialBounds} 
-          centerTimestamp={centerTimestamp}
-          sidebarCollapsed={sidebarCollapsed}
-        />
-        <MapClickHandler onMapClick={handleMapClick} />
-        <TileLayer 
-          url={layers[activeLayer].url}
-          attribution={layers[activeLayer].attribution}
-          maxZoom={19}
-        />
-        <MapControls 
-          onLayerChange={setActiveLayer} 
-          activeLayer={activeLayer}
-          onLocate={handleLocate}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-        />
-        
-        {currentLocation && (
-          <Marker 
-            position={currentLocation}
-            icon={currentLocationIcon}
-          >
-            <Tooltip 
-              permanent={true}
-              direction="top" 
-              offset={[0, -16]}
-              className="custom-tooltip"
-            >
-              <div className="px-2 py-1 text-xs font-medium text-gray-700">
-                Your Location
-              </div>
-            </Tooltip>
-          </Marker>
-        )}
+          className="w-full h-full"
+          zoomControl={false}
+          ref={setMap}
+        >
+          <MapUpdater 
+            center={mapCenter} 
+            zoom={mapZoom} 
+            initialBounds={initialBounds} 
+            centerTimestamp={centerTimestamp}
+            sidebarCollapsed={sidebarCollapsed}
+          />
+          <MapClickHandler onMapClick={handleMapClick} />
+          
+          {/* Satellite layer (behind) */}
+          {activeLayer === 'satellite' && (
+            <TileLayer 
+              url={layers.satellite.url}
+              attribution={layers.satellite.attribution}
+              maxZoom={19}
+              className="z-[400]"
+            />
+          )}
 
-        {markers.map((marker) => (
-          <Marker 
-            key={marker.id} 
-            position={marker.position}
-            icon={getMarkerIcon()}
-            eventHandlers={{
-              click: (e) => {
-                e.originalEvent.stopPropagation();
-                handleMarkerClick(marker);
-              },
-              mouseover: () => setHoveredMarkerId(marker.id),
-              mouseout: (e) => {
-                if (
-                  !(marker.position[0] === center[0] && 
-                    marker.position[1] === center[1] && 
-                    zoom > 14)
-                ) {
-                  const tooltipEl = e.target.getTooltip()?.getElement();
-                  if (tooltipEl && !tooltipEl.matches(':hover')) {
-                    setHoveredMarkerId(null);
-                  }
-                }
-              }
-            }}
-          >
-            {hoveredMarkerId === marker.id && (
+          {/* White overlay */}
+          {activeLayer === 'satellite' && (
+            <div className="map-overlay" />
+          )}
+          
+          {/* Street layer (on top) */}
+          <TileLayer 
+            url={layers.minimal.url}
+            attribution={layers.minimal.attribution}
+            maxZoom={19}
+            opacity={activeLayer === 'satellite' ? 0.7 : 1}
+            className={activeLayer === 'minimal' ? '' : 'z-[402]'}
+          />
+          
+          <MapControls 
+            onLayerChange={setActiveLayer} 
+            activeLayer={activeLayer}
+            onLocate={handleLocate}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+          />
+          
+          {currentLocation && (
+            <Marker 
+              position={currentLocation}
+              icon={currentLocationIcon}
+            >
               <Tooltip 
                 permanent={true}
                 direction="top" 
-                offset={[0, -48]}
+                offset={[0, -16]}
                 className="custom-tooltip"
-                interactive={true}
               >
-                <div 
-                  className="p-4 min-w-[200px] max-w-[240px] cursor-pointer flex flex-col items-center text-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMarkerClick(marker);
-                  }}
-                  onMouseLeave={() => {
-                    if (
-                      !(marker.position[0] === center[0] && 
-                        marker.position[1] === center[1] && 
-                        zoom > 14)
-                    ) {
-                      setHoveredMarkerId(null);
-                    }
-                  }}
-                >
-                  <div className="w-24 h-24 rounded-lg overflow-hidden mb-3 border border-gray-200">
-                    <img 
-                      src={marker.image} 
-                      alt={marker.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{marker.name}</h3>
-                  {marker.description && (
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">{marker.description}</p>
-                  )}
-                  <div className="flex items-center justify-center text-xs text-gray-500">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    <span>Click for more details</span>
-                  </div>
+                <div className="px-2 py-1 text-xs font-medium text-gray-700">
+                  Your Location
                 </div>
               </Tooltip>
-            )}
-          </Marker>
-        ))}
-      </MapContainer>
+            </Marker>
+          )}
 
-      {selectedLocation && (
-        <div 
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-8"
-          onClick={handleCloseModal}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          
-          <div 
-            className="relative bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div 
-              className="relative h-48"
-              style={{ background: gradient }}
+          {markers.map((marker) => (
+            <Marker 
+              key={marker.id} 
+              position={marker.position}
+              icon={getMarkerIcon()}
+              eventHandlers={{
+                click: (e) => {
+                  e.originalEvent.stopPropagation();
+                  handleMarkerClick(marker);
+                },
+                mouseover: () => setHoveredMarkerId(marker.id),
+                mouseout: (e) => {
+                  if (
+                    !(marker.position[0] === center[0] && 
+                      marker.position[1] === center[1] && 
+                      zoom > 14)
+                  ) {
+                    const tooltipEl = e.target.getTooltip()?.getElement();
+                    if (tooltipEl && !tooltipEl.matches(':hover')) {
+                      setHoveredMarkerId(null);
+                    }
+                  }
+                }
+              }}
             >
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseModal();
-                }}
-                className="absolute top-8 right-8 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors z-[1001] cursor-pointer"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-
-              <div className="absolute inset-0 flex items-center">
-                <div className="flex items-center gap-6 px-8">
-                  <div className="flex-shrink-0 w-28 h-28 rounded-xl shadow-lg overflow-hidden">
-                    <img 
-                      src={selectedLocation.image}
-                      alt={selectedLocation.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {selectedLocation.name}
-                    </h2>
-                    {selectedLocation.description && (
-                      <p className="text-gray-600 mt-2 text-base">{selectedLocation.description}</p>
+              {hoveredMarkerId === marker.id && (
+                <Tooltip 
+                  permanent={true}
+                  direction="top" 
+                  offset={[0, -48]}
+                  className="custom-tooltip"
+                  interactive={true}
+                >
+                  <div 
+                    className="p-4 min-w-[200px] max-w-[240px] cursor-pointer flex flex-col items-center text-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMarkerClick(marker);
+                    }}
+                    onMouseLeave={() => {
+                      if (
+                        !(marker.position[0] === center[0] && 
+                          marker.position[1] === center[1] && 
+                          zoom > 14)
+                      ) {
+                        setHoveredMarkerId(null);
+                      }
+                    }}
+                  >
+                    <div className="w-24 h-24 rounded-lg overflow-hidden mb-3 border border-gray-200">
+                      <img 
+                        src={marker.image} 
+                        alt={marker.name}
+                        className="w-full h-full object-contain p-0.5"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.parentElement!.style.backgroundColor = '#f3f4f6';
+                          img.src = logo;
+                          img.onerror = null; // Prevent infinite error loop
+                        }}
+                      />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 text-sm mb-1">{marker.name}</h3>
+                    {marker.description && (
+                      <p className="text-xs text-gray-600 line-clamp-2 mb-2">{marker.description}</p>
                     )}
+                    <div className="flex items-center justify-center text-xs text-gray-500">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>Click for more details</span>
+                    </div>
+                  </div>
+                </Tooltip>
+              )}
+            </Marker>
+          ))}
+        </MapContainer>
+
+        {selectedLocation && (
+          <div 
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-8"
+            onClick={handleCloseModal}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            
+            <div 
+              className="relative bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div 
+                className="relative h-48"
+                style={{ background: gradient }}
+              >
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCloseModal();
+                  }}
+                  className="absolute top-8 right-8 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors z-[1001] cursor-pointer"
+                >
+                  <X className="w-5 h-5 text-gray-700" />
+                </button>
+
+                <div className="absolute inset-0 flex items-center">
+                  <div className="flex items-center gap-6 px-8">
+                    <div className="flex-shrink-0 w-28 h-28 rounded-xl shadow-lg overflow-hidden">
+                      <img 
+                        src={selectedLocation.image}
+                        alt={selectedLocation.name}
+                        className="w-full h-full object-contain p-1"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.parentElement!.style.backgroundColor = '#f3f4f6';
+                          img.src = logo;
+                          img.onerror = null; // Prevent infinite error loop
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedLocation.name}
+                      </h2>
+                      {selectedLocation.description && (
+                        <p className="text-gray-600 mt-2 text-base">{selectedLocation.description}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="relative px-8 py-8">
-              {selectedLocation.additionalInfo && (
-                <p className="text-gray-600 mb-10 text-base">
-                  {selectedLocation.additionalInfo}
-                </p>
-              )}
+              
+              <div className="relative px-8 py-8">
+                {selectedLocation.additionalInfo && (
+                  <p className="text-gray-600 mb-10 text-base">
+                    {selectedLocation.additionalInfo}
+                  </p>
+                )}
 
-              <div className="space-y-8">
-                {(selectedLocation.phone || selectedLocation.email) && (
-                  <div className="flex items-start gap-4">
-                    <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium text-gray-900">Contact</h3>
-                      <div className="mt-2 space-y-2">
-                        {selectedLocation.phone && (
-                          <a 
-                            href={`tel:${selectedLocation.phone}`}
-                            className="block text-gray-600 hover:text-blue-600 transition-colors"
-                          >
-                            {selectedLocation.phone}
-                          </a>
-                        )}
-                        {selectedLocation.email && (
-                          <a 
-                            href={`mailto:${selectedLocation.email}`}
-                            className="block text-gray-600 hover:text-blue-600 transition-colors"
-                          >
-                            {selectedLocation.email}
-                          </a>
-                        )}
+                <div className="space-y-8">
+                  {(selectedLocation.phone || selectedLocation.email) && (
+                    <div className="flex items-start gap-4">
+                      <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <h3 className="font-medium text-gray-900">Contact</h3>
+                        <div className="mt-2 space-y-2">
+                          {selectedLocation.phone && (
+                            <a 
+                              href={`tel:${selectedLocation.phone}`}
+                              className="block text-gray-600 hover:text-blue-600 transition-colors"
+                            >
+                              {selectedLocation.phone}
+                            </a>
+                          )}
+                          {selectedLocation.email && (
+                            <a 
+                              href={`mailto:${selectedLocation.email}`}
+                              className="block text-gray-600 hover:text-blue-600 transition-colors"
+                            >
+                              {selectedLocation.email}
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {selectedLocation.address && (
-                  <div className="flex items-start gap-4">
-                    <Building className="w-5 h-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium text-gray-900">Address</h3>
-                      <p className="mt-2 text-gray-600">{selectedLocation.address}</p>
+                  {selectedLocation.address && (
+                    <div className="flex items-start gap-4">
+                      <Building className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <h3 className="font-medium text-gray-900">Address</h3>
+                        <p className="mt-2 text-gray-600">{selectedLocation.address}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-10 flex items-center justify-between">
-                <div className="flex-1 flex flex-wrap gap-2">
-                  {selectedLocation.tags?.map((tag, index) => {
-                    const colorIndex = index % rainbowColors.length;
-                    const { bg, text } = rainbowColors[colorIndex];
-                    
-                    return (
-                      <span 
-                        key={tag}
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-transform hover:scale-105"
-                        style={{ 
-                          backgroundColor: bg,
-                          color: text
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    );
-                  })}
+                  )}
                 </div>
 
-                <a
-                  href={selectedLocation.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors ml-6"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>Visit Website</span>
-                  <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
+                <div className="mt-10 flex items-center justify-between">
+                  <div className="flex-1 flex flex-wrap gap-2">
+                    {selectedLocation.tags?.map((tag, index) => {
+                      const colorIndex = index % rainbowColors.length;
+                      const { bg, text } = rainbowColors[colorIndex];
+                      
+                      return (
+                        <span 
+                          key={tag}
+                          className="px-4 py-2 rounded-full text-sm font-medium transition-transform hover:scale-105"
+                          style={{ 
+                            backgroundColor: bg,
+                            color: text
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <a
+                    href={selectedLocation.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors ml-6"
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span>Visit Website</span>
+                    <ExternalLink className="w-3 h-3 ml-1" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 };

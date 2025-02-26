@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MapPin, Globe, Search, X, Filter, ChevronDown } from 'lucide-react';
+import logo from '../assets/logo.svg';
 
 interface Location {
   id: number;
@@ -345,7 +346,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <img 
                         src={location.image} 
                         alt={location.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain p-0.5"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.parentElement!.style.backgroundColor = '#f3f4f6';
+                          img.src = logo;
+                          img.onerror = null; // Prevent infinite error loop
+                        }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
