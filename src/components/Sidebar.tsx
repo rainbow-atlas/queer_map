@@ -64,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   });
   const filterRef = useRef<HTMLDivElement>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   // Generate colors for categories
   const categoryColors = useMemo(() => {
@@ -73,6 +74,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       return acc;
     }, {} as Record<string, string>);
   }, [locationData]);
+
+  // Add window resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 1024);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -114,18 +126,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsFilterOpen(!isFilterOpen);
   };
 
-  const categories = Object.keys(locationData);
-  const hasLocations = categories.length > 0;
-
-  // If sidebar is collapsed, render nothing but maintain hooks
-  if (isCollapsed) {
+  // If sidebar is collapsed and not in mobile view, render nothing but maintain hooks
+  if (isCollapsed && !isMobileView) {
     return <div className="hidden" />;
   }
+
+  const categories = Object.keys(locationData);
+  const hasLocations = categories.length > 0;
 
   return (
     <div className="h-full flex flex-col">
       {/* Fixed Header Section */}
-      <div className="flex-none px-4 pt-4">
+      <div className={`flex-none px-4 pt-4 ${isMobileView ? 'pb-4' : ''}`}>
         {/* Category Selector */}
         <div className="mb-4">
           <div className="relative">
@@ -193,7 +205,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             {isFilterOpen && (
               <div 
                 ref={filterRef}
-                className="absolute left-1/2 -translate-x-1/2 top-12 w-[308px] bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50"
+                className={`
+                  absolute bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50
+                  ${isMobileView 
+                    ? 'fixed inset-x-4 top-24'
+                    : 'left-1/2 -translate-x-1/2 top-12 w-[308px]'
+                  }
+                `}
               >
                 {/* Visibility Settings */}
                 <div className="mb-4">
@@ -304,7 +322,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4">
+      <div className={`
+        flex-1 overflow-y-auto min-h-0 px-4 
+        ${isMobileView ? 'pb-20' : 'pb-4'}
+      `}>
         {!hasLocations ? (
           <div className="text-center text-gray-500 mt-4">
             <p>No locations found</p>
@@ -322,24 +343,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {(selectedCategory ? [selectedCategory] : categories).map((category) => (
+            {(selectedCategory ? [selectedCategory] : categories).map((category: string) => (
               locationData[category]?.map((location) => (
                 <div 
                   key={location.id} 
                   onClick={() => onLocationSelect(location.position)}
-                  className="p-3 rounded-lg border border-gray-100 transition-all duration-200 cursor-pointer"
+                  className={`
+                    p-3 rounded-lg border border-gray-100 transition-all duration-200 cursor-pointer
+                    ${isMobileView ? 'active:bg-gray-50' : 'hover:bg-gray-50'}
+                  `}
                   style={{
                     background: categoryColors[category],
-                    '--hover-bg': getHoverColor(categoryColors[category]),
+                    '--hover-bg': getHoverColor(categoryColors[category])
                   } as React.CSSProperties}
-                  onMouseEnter={(e) => {
-                    const target = e.currentTarget;
-                    target.style.background = getHoverColor(categoryColors[category]);
-                  }}
-                  onMouseLeave={(e) => {
-                    const target = e.currentTarget;
-                    target.style.background = categoryColors[category];
-                  }}
                 >
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-white border border-gray-200">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map } from './components/Map';
 import { Sidebar } from './components/Sidebar';
-import { ChevronLeft, X, Shield, Scale, Cookie } from 'lucide-react';
+import { ChevronLeft, X, Shield, Scale, Cookie, Menu } from 'lucide-react';
 import logo from './assets/logo.svg';
 
 // Legal Modal Component
@@ -339,6 +339,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   // Check cookie consent on mount
   useEffect(() => {
@@ -423,6 +425,19 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [centerTimestamp, setCenterTimestamp] = useState(Date.now());
   const [legalModal, setLegalModal] = useState<'dsgvo' | 'impressum' | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    id: number;
+    name: string;
+    position: [number, number];
+    description?: string;
+    website: string;
+    tags?: string[];
+    image: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    additionalInfo?: string;
+  } | null>(null);
 
   const handleLocationSelect = (coordinates: [number, number]) => {
     setMapCenter(coordinates);
@@ -462,6 +477,30 @@ function App() {
     return acc;
   }, {} as LocationData);
 
+  // Add window resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 1024);
+      if (window.innerWidth > 1024) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close mobile menu when location is selected
+  const handleMobileLocationSelect = (position: [number, number]) => {
+    handleLocationSelect(position);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedLocation(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -493,78 +532,151 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Left Side Elements Container */}
-      <div className="fixed left-6 top-6 bottom-6 z-[999] flex flex-col w-[340px]">
-        {/* Logo */}
-        <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4">
-          <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
-          <span className="text-xl font-semibold text-gray-900">queer_map</span>
-        </div>
-
-        {/* Floating Sidebar Container */}
-        <div 
-          className={`
-            my-4 flex-1 min-h-0 transition-all duration-300 ease-in-out
-            ${isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[340px] opacity-100'}
-          `}
+      {/* Mobile Menu Button */}
+      {isMobileView && !isMobileMenuOpen && (
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="mobile-menu-button"
+          aria-label="Toggle menu"
         >
-          {/* Sidebar Background with Blur */}
-          <div 
-            className={`
-              bg-white/90 backdrop-blur-sm rounded-lg shadow-lg
-              h-full overflow-hidden
-              transition-all duration-300
-              ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}
-            `}
-          >
-            {/* Sidebar Content */}
-            <Sidebar 
-              locationData={filteredLocations}
-              onLocationSelect={handleLocationSelect}
-              isCollapsed={isSidebarCollapsed}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              allTags={allTags}
-              selectedTags={selectedTags}
-              onTagsChange={setSelectedTags}
-            />
-          </div>
-        </div>
+          <Menu className="w-6 h-6 text-gray-700" />
+        </button>
+      )}
 
-        {/* Legal Links and Controls */}
-        <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-2 space-y-2">
-            <button
-              onClick={toggleSidebar}
-              className="w-full flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-            >
-              <ChevronLeft 
-                className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`}
-              />
-              <span className="text-sm">{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
-            </button>
-            <div className="border-t border-gray-100" />
-            <div className="flex items-center gap-1">
+      {/* Floating Logo for Mobile/Tablet */}
+      {isMobileView && !isMobileMenuOpen && (
+        <div className="floating-logo">
+          <img src={logo} alt="Queer Map Logo" className="w-6 h-6" />
+          <span className="text-base font-semibold text-gray-900">queer_map</span>
+        </div>
+      )}
+
+      {/* Left Side Elements Container */}
+      <div className={`
+        ${isMobileView 
+          ? `mobile-sidebar ${isMobileMenuOpen ? 'open' : ''}`
+          : 'fixed left-6 top-6 bottom-6 z-[999] flex flex-col'
+        } w-[340px]
+      `}>
+        {isMobileView ? (
+          <div className="mobile-sidebar-content">
+            {/* Mobile Header */}
+            <div className="mobile-sidebar-header">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
+                <span className="text-xl font-semibold text-gray-900">queer_map</span>
+              </div>
               <button
-                onClick={() => setLegalModal('dsgvo')}
-                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 hover:bg-gray-50 rounded-lg text-gray-600"
               >
-                <Shield className="w-4 h-4" />
-                <span className="text-sm">DSGVO</span>
-              </button>
-              <div className="w-px h-6 bg-gray-200" />
-              <button
-                onClick={() => setLegalModal('impressum')}
-                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
-              >
-                <Scale className="w-4 h-4" />
-                <span className="text-sm">Impressum</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Sidebar Content */}
+            <div className="flex-1 overflow-hidden">
+              <Sidebar 
+                locationData={filteredLocations}
+                onLocationSelect={handleMobileLocationSelect}
+                isCollapsed={isSidebarCollapsed}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                allTags={allTags}
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+              />
+            </div>
+
+            {/* Legal Links */}
+            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden mt-4">
+              <div className="p-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setLegalModal('dsgvo')}
+                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm">DSGVO</span>
+                  </button>
+                  <div className="w-px h-6 bg-gray-200" />
+                  <button
+                    onClick={() => setLegalModal('impressum')}
+                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                  >
+                    <Scale className="w-4 h-4" />
+                    <span className="text-sm">Impressum</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Desktop Layout */}
+            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4">
+              <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
+              <span className="text-xl font-semibold text-gray-900">queer_map</span>
+            </div>
+
+            <div className={`
+              my-4 flex-1 min-h-0 transition-all duration-300 ease-in-out
+              ${isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[340px] opacity-100'}
+            `}>
+              <div className={`
+                bg-white/90 backdrop-blur-sm rounded-lg shadow-lg
+                h-full overflow-hidden transition-all duration-300
+                ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}
+              `}>
+                <Sidebar 
+                  locationData={filteredLocations}
+                  onLocationSelect={handleLocationSelect}
+                  isCollapsed={isSidebarCollapsed}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  allTags={allTags}
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                />
+              </div>
+            </div>
+
+            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+              <div className="p-2 space-y-2">
+                <button
+                  onClick={toggleSidebar}
+                  className="w-full flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+                >
+                  <ChevronLeft 
+                    className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`}
+                  />
+                  <span className="text-sm">{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
+                </button>
+                <div className="border-t border-gray-100" />
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setLegalModal('dsgvo')}
+                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm">DSGVO</span>
+                  </button>
+                  <div className="w-px h-6 bg-gray-200" />
+                  <button
+                    onClick={() => setLegalModal('impressum')}
+                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                  >
+                    <Scale className="w-4 h-4" />
+                    <span className="text-sm">Impressum</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
+      {/* Main Map Area */}
       <div className="flex-1 relative">
         <Map 
           center={mapCenter}
@@ -577,9 +689,26 @@ function App() {
             maxLng: initialBounds.maxLng,
           } : undefined}
           centerTimestamp={centerTimestamp}
-          sidebarCollapsed={isSidebarCollapsed}
+          sidebarCollapsed={!isMobileView && isSidebarCollapsed}
         />
       </div>
+
+      {/* Location Detail Modal */}
+      {selectedLocation && (
+        <div 
+          className="fixed inset-0 z-[1003] flex items-center justify-center p-8"
+          onClick={handleCloseModal}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          
+          <div 
+            className="relative bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Location Detail Content */}
+          </div>
+        </div>
+      )}
 
       {/* Legal Modals */}
       {legalModal === 'dsgvo' && (
