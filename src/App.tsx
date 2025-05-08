@@ -203,8 +203,6 @@ const LegalModal: React.FC<{
                   <h2 id="web-analytics-einleitung" class="adsimple-112955695">Web Analytics</h2>
                   <p>Wir verwenden auf unserer Website Software zur Auswertung des Verhaltens der Website-Besucher, kurz Web Analytics oder Web-Analyse genannt. Dabei werden Daten gesammelt und analysiert, um unsere Website für Sie zu optimieren.</p>
 
-                  <h2 id="schlusswort" class="adsimple-112955695">Schlusswort</h2>
-                  <p>Herzlichen Glückwunsch! Wenn Sie diese Zeilen lesen, haben Sie sich wirklich durch unsere gesamte Datenschutzerklärung gekämpft. Wie Sie am Umfang unserer Datenschutzerklärung sehen, nehmen wir den Schutz Ihrer persönlichen Daten, alles andere als auf die leichte Schulter.</p>
                 </div>
               ` }} />
             ) : (
@@ -578,6 +576,11 @@ function App() {
 
   // Filter locations based on search term and selected tags (OR logic)
   const filteredLocations = Object.entries(locationData).reduce((acc, [category, locations]) => {
+    // Skip if category is selected and this isn't it
+    if (selectedCategory && category !== selectedCategory) {
+      return acc;
+    }
+
     const filtered = locations.filter(location => {
       const matchesSearch = searchTerm === '' || 
         location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
