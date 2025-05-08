@@ -341,25 +341,125 @@ function App() {
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hideLegal, setHideLegal] = useState(false);
 
-  // Check cookie consent on mount
-  useEffect(() => {
-    const consent = localStorage.getItem('cookie-consent');
-    if (!consent) {
-      setShowCookieBanner(true);
+  // Handle category change
+  const handleCategoryChange = (category: string | null) => {
+    setSelectedCategory(category);
+    if (!isInitialLoad) {
+      updateUrl(category, selectedTags, isFullscreen, hideLegal);
     }
-  }, []);
 
-  const handleCookieAccept = () => {
-    localStorage.setItem('cookie-consent', 'accepted');
-    setShowCookieBanner(false);
-    // Here you would initialize your analytics and other cookie-dependent features
+    // If a category is selected, center the map on its pins
+    if (category && locationData[category]) {
+      const categoryLocations = locationData[category];
+      if (categoryLocations.length > 0) {
+        if (categoryLocations.length === 1) {
+          // For single pin, just center on it with a fixed zoom
+          const [lat, lng] = categoryLocations[0].position;
+          setMapCenter([lat, lng]);
+          setMapZoom(15); // Fixed zoom level for single pins
+          setCenterTimestamp(Date.now());
+        } else {
+          // Calculate the center point of all pins in the category
+          const bounds = categoryLocations.reduce(
+            (bounds, location) => {
+              const [lat, lng] = location.position;
+              return {
+                minLat: Math.min(bounds.minLat, lat),
+                maxLat: Math.max(bounds.maxLat, lat),
+                minLng: Math.min(bounds.minLng, lng),
+                maxLng: Math.max(bounds.maxLng, lng),
+              };
+            },
+            {
+              minLat: Infinity,
+              maxLat: -Infinity,
+              minLng: Infinity,
+              maxLng: -Infinity,
+            }
+          );
+
+          // Calculate center point
+          const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+          const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+          
+          // Calculate zoom level based on the spread of points
+          const latDiff = bounds.maxLat - bounds.minLat;
+          const lngDiff = bounds.maxLng - bounds.minLng;
+          const maxDiff = Math.max(latDiff, lngDiff);
+          // Ensure zoom level is between 5 and 15
+          const zoom = Math.min(15, Math.max(5, Math.floor(15.5 - Math.log2(maxDiff * 111))));
+
+          // Update map center and zoom
+          setMapCenter([centerLat, centerLng]);
+          setMapZoom(zoom);
+          setCenterTimestamp(Date.now());
+        }
+      }
+    }
   };
 
-  const handleCookieReject = () => {
-    localStorage.setItem('cookie-consent', 'rejected');
-    setShowCookieBanner(false);
-    // Here you would ensure no optional cookies are set
+  // Handle tags change
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags);
+    if (!isInitialLoad) {
+      updateUrl(selectedCategory, tags, isFullscreen, hideLegal);
+    }
+  };
+
+  // Handle fullscreen toggle
+  const handleFullscreenToggle = () => {
+    const newFullscreenState = !isFullscreen;
+    setIsFullscreen(newFullscreenState);
+    if (!isInitialLoad) {
+      updateUrl(selectedCategory, selectedTags, newFullscreenState, hideLegal);
+    }
+  };
+
+  // Handle legal visibility toggle
+  const handleLegalVisibilityToggle = () => {
+    const newHideLegalState = !hideLegal;
+    setHideLegal(newHideLegalState);
+    if (!isInitialLoad) {
+      updateUrl(selectedCategory, selectedTags, isFullscreen, newHideLegalState);
+    }
+  };
+
+  // Update URL function
+  const updateUrl = (category: string | null, tags: string[], fullscreen: boolean, hideLegal: boolean) => {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (category) {
+      params.set('category', category);
+    } else {
+      params.delete('category');
+    }
+    
+    if (tags.length > 0) {
+      params.set('tags', tags.join(','));
+    } else {
+      params.delete('tags');
+    }
+
+    if (fullscreen) {
+      params.set('fullscreen', 'true');
+    } else {
+      params.delete('fullscreen');
+    }
+
+    if (hideLegal) {
+      params.set('hideLegal', 'true');
+    } else {
+      params.delete('hideLegal');
+    }
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState({}, '', newUrl);
   };
 
   // Fetch location data
@@ -372,10 +472,29 @@ function App() {
         }
         const data = await response.json();
         setLocationData(data);
+        
+        // After data is loaded, set the category from URL if it exists
+        const params = new URLSearchParams(window.location.search);
+        const category = params.get('category');
+        const tags = params.get('tags')?.split(',') || [];
+        const fullscreen = params.get('fullscreen') === 'true';
+        const hideLegal = params.get('hideLegal') === 'true';
+        
+        if (category && data[category]) {
+          setSelectedCategory(category);
+        }
+        if (tags.length > 0) {
+          setSelectedTags(tags);
+        }
+        setIsFullscreen(fullscreen);
+        setHideLegal(hideLegal);
+        
         setLoading(false);
+        setIsInitialLoad(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
         setLoading(false);
+        setIsInitialLoad(false);
       }
     };
 
@@ -422,7 +541,6 @@ function App() {
   const [mapZoom, setMapZoom] = useState(initialZoom);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [centerTimestamp, setCenterTimestamp] = useState(Date.now());
   const [legalModal, setLegalModal] = useState<'dsgvo' | 'impressum' | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -501,6 +619,26 @@ function App() {
     setSelectedLocation(null);
   };
 
+  // Check cookie consent on mount
+  useEffect(() => {
+    const consent = localStorage.getItem('cookie-consent');
+    if (!consent) {
+      setShowCookieBanner(true);
+    }
+  }, []);
+
+  const handleCookieAccept = () => {
+    localStorage.setItem('cookie-consent', 'accepted');
+    setShowCookieBanner(false);
+    // Here you would initialize your analytics and other cookie-dependent features
+  };
+
+  const handleCookieReject = () => {
+    localStorage.setItem('cookie-consent', 'rejected');
+    setShowCookieBanner(false);
+    // Here you would ensure no optional cookies are set
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -532,152 +670,170 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Mobile Menu Button */}
-      {isMobileView && !isMobileMenuOpen && (
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="mobile-menu-button"
-          aria-label="Toggle menu"
-        >
-          <Menu className="w-6 h-6 text-gray-700" />
-        </button>
-      )}
+      {/* Header - Always visible */}
+      <div className="fixed top-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4 w-[340px]">
+        <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
+        <span className="text-xl font-semibold text-gray-900">queer_map</span>
+      </div>
 
-      {/* Floating Logo for Mobile/Tablet */}
-      {isMobileView && !isMobileMenuOpen && (
-        <div className="floating-logo">
-          <img src={logo} alt="Queer Map Logo" className="w-6 h-6" />
-          <span className="text-base font-semibold text-gray-900">queer_map</span>
+      {/* Legal Links - Only show when not hidden and in fullscreen mode */}
+      {!hideLegal && isFullscreen && (
+        <div className="fixed bottom-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <div className="p-2">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setLegalModal('dsgvo')}
+                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                <span className="text-sm">DSGVO</span>
+              </button>
+              <div className="w-px h-6 bg-gray-200" />
+              <button
+                onClick={() => setLegalModal('impressum')}
+                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+              >
+                <Scale className="w-4 h-4" />
+                <span className="text-sm">Impressum</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Left Side Elements Container */}
-      <div className={`
-        ${isMobileView 
-          ? `mobile-sidebar ${isMobileMenuOpen ? 'open' : ''}`
-          : 'fixed left-6 top-6 bottom-6 z-[999] flex flex-col'
-        } w-[340px]
-      `}>
-        {isMobileView ? (
-          <div className="mobile-sidebar-content">
-            {/* Mobile Header */}
-            <div className="mobile-sidebar-header">
-              <div className="flex items-center gap-3">
-                <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
-                <span className="text-xl font-semibold text-gray-900">queer_map</span>
-              </div>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 hover:bg-gray-50 rounded-lg text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Sidebar Content */}
-            <div className="flex-1 overflow-hidden">
-              <Sidebar 
-                locationData={filteredLocations}
-                onLocationSelect={handleMobileLocationSelect}
-                isCollapsed={isSidebarCollapsed}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                allTags={allTags}
-                selectedTags={selectedTags}
-                onTagsChange={setSelectedTags}
-              />
-            </div>
-
-            {/* Legal Links */}
-            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden mt-4">
-              <div className="p-2">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setLegalModal('dsgvo')}
-                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span className="text-sm">DSGVO</span>
-                  </button>
-                  <div className="w-px h-6 bg-gray-200" />
-                  <button
-                    onClick={() => setLegalModal('impressum')}
-                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
-                  >
-                    <Scale className="w-4 h-4" />
-                    <span className="text-sm">Impressum</span>
-                  </button>
+      {/* Left Side Elements Container - Only show when not in fullscreen */}
+      {!isFullscreen && (
+        <div className={`
+          ${isMobileView 
+            ? `mobile-sidebar ${isMobileMenuOpen ? 'open' : ''}`
+            : 'fixed left-6 top-24 bottom-6 z-[999] flex flex-col'
+          } w-[340px]
+        `}>
+          {isMobileView ? (
+            <div className="mobile-sidebar-content">
+              {/* Mobile Header */}
+              <div className="mobile-sidebar-header">
+                <div className="flex items-center gap-3">
+                  <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
+                  <span className="text-xl font-semibold text-gray-900">queer_map</span>
                 </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 hover:bg-gray-50 rounded-lg text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Layout */}
-            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4">
-              <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
-              <span className="text-xl font-semibold text-gray-900">queer_map</span>
-            </div>
 
-            <div className={`
-              my-4 flex-1 min-h-0 transition-all duration-300 ease-in-out
-              ${isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[340px] opacity-100'}
-            `}>
-              <div className={`
-                bg-white/90 backdrop-blur-sm rounded-lg shadow-lg
-                h-full overflow-hidden transition-all duration-300
-                ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}
-              `}>
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-hidden">
                 <Sidebar 
                   locationData={filteredLocations}
-                  onLocationSelect={handleLocationSelect}
+                  onLocationSelect={handleMobileLocationSelect}
                   isCollapsed={isSidebarCollapsed}
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   allTags={allTags}
                   selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
+                  onTagsChange={handleTagsChange}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={handleCategoryChange}
                 />
               </div>
-            </div>
 
-            <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-              <div className="p-2 space-y-2">
-                <button
-                  onClick={toggleSidebar}
-                  className="w-full flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-                >
-                  <ChevronLeft 
-                    className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`}
+              {/* Legal Links - Only show when not hidden */}
+              {!hideLegal && (
+                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden mt-4">
+                  <div className="p-2">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setLegalModal('dsgvo')}
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span className="text-sm">DSGVO</span>
+                      </button>
+                      <div className="w-px h-6 bg-gray-200" />
+                      <button
+                        onClick={() => setLegalModal('impressum')}
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                      >
+                        <Scale className="w-4 h-4" />
+                        <span className="text-sm">Impressum</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Desktop Layout */}
+              <div className={`
+                my-4 flex-1 min-h-0 transition-all duration-300 ease-in-out
+                ${isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[340px] opacity-100'}
+              `}>
+                <div className={`
+                  bg-white/90 backdrop-blur-sm rounded-lg shadow-lg
+                  h-full overflow-hidden transition-all duration-300
+                  ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}
+                `}>
+                  <Sidebar 
+                    locationData={filteredLocations}
+                    onLocationSelect={handleLocationSelect}
+                    isCollapsed={isSidebarCollapsed}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    allTags={allTags}
+                    selectedTags={selectedTags}
+                    onTagsChange={handleTagsChange}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={handleCategoryChange}
                   />
-                  <span className="text-sm">{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
-                </button>
-                <div className="border-t border-gray-100" />
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setLegalModal('dsgvo')}
-                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span className="text-sm">DSGVO</span>
-                  </button>
-                  <div className="w-px h-6 bg-gray-200" />
-                  <button
-                    onClick={() => setLegalModal('impressum')}
-                    className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
-                  >
-                    <Scale className="w-4 h-4" />
-                    <span className="text-sm">Impressum</span>
-                  </button>
                 </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+
+              {/* Legal Links - Only show when not hidden */}
+              {!hideLegal && (
+                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                  <div className="p-2 space-y-2">
+                    <button
+                      onClick={toggleSidebar}
+                      className="w-full flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+                    >
+                      <ChevronLeft 
+                        className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`}
+                      />
+                      <span className="text-sm">{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
+                    </button>
+                    <div className="border-t border-gray-100" />
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setLegalModal('dsgvo')}
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span className="text-sm">DSGVO</span>
+                      </button>
+                      <div className="w-px h-6 bg-gray-200" />
+                      <button
+                        onClick={() => setLegalModal('impressum')}
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                      >
+                        <Scale className="w-4 h-4" />
+                        <span className="text-sm">Impressum</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Main Map Area */}
-      <div className="flex-1 relative">
+      <div className={`flex-1 relative ${isFullscreen ? 'w-full' : ''}`}>
         <Map 
           center={mapCenter}
           zoom={mapZoom}

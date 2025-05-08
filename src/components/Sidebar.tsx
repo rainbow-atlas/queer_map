@@ -25,6 +25,8 @@ interface SidebarProps {
   allTags: string[];
   selectedTags: string[];
   onTagsChange: (tags: string[]) => void;
+  selectedCategory: string | null;
+  onCategoryChange: (category: string | null) => void;
 }
 
 interface VisibilitySettings {
@@ -54,9 +56,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSearchChange,
   allTags,
   selectedTags,
-  onTagsChange
+  onTagsChange,
+  selectedCategory,
+  onCategoryChange
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [visibility, setVisibility] = useState<VisibilitySettings>({
     descriptions: true,
@@ -103,9 +106,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   useEffect(() => {
     if (selectedCategory && !locationData[selectedCategory]) {
-      setSelectedCategory('');
+      onCategoryChange(null);
     }
-  }, [locationData, selectedCategory]);
+  }, [locationData, selectedCategory, onCategoryChange]);
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -143,8 +146,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="relative">
             <select 
               className="w-full pl-3 pr-10 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 focus:ring-1 focus:ring-gray-200 bg-white/50 backdrop-blur appearance-none"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedCategory || ''}
+              onChange={(e) => onCategoryChange(e.target.value || null)}
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
