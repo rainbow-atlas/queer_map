@@ -5,6 +5,12 @@ on:
     branches: [ main ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  # Refresh map data from Supabase daily. Full build + deploy is required: GitHub Pages
+  # serves dist/, and locations.json is only updated there after vite build copies public/.
+  schedule:
+    # ~midnight Austria: 23:00 UTC = 00:00 CET. In CEST (daylight time) this runs 01:00 local;
+    # GitHub cron is UTC-only so there is no single expression that always hits local midnight.
+    - cron: '0 23 * * *'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
