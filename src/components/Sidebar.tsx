@@ -1,24 +1,24 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MapPin, Globe, Search, X, Filter, ChevronDown } from 'lucide-react';
 import logo from '../assets/logo.svg';
+import { useI18n } from '../i18n/I18nContext';
 
 interface Location {
   id: number;
   name: string;
   position: [number, number];
+  categories: string[];
   description?: string;
   website: string;
   tags?: string[];
   image: string;
 }
 
-interface LocationData {
-  [category: string]: Location[];
-}
-
 interface SidebarProps {
-  locationData: LocationData;
-  onLocationSelect: (location: [number, number]) => void;
+  locations: Location[];
+  /** All category names (e.g. for the filter dropdown), sorted */
+  allCategories: string[];
+  onLocationSelect: (location: Location) => void;
   isCollapsed: boolean;
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -49,7 +49,8 @@ const getHoverColor = (baseColor: string) => {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ 
-  locationData, 
+  locations,
+  allCategories,
   onLocationSelect,
   isCollapsed,
   searchTerm,
@@ -60,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedCategory,
   onCategoryChange
 }) => {
+  const { t } = useI18n();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [visibility, setVisibility] = useState<VisibilitySettings>({
     descriptions: true,
@@ -69,14 +71,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const [isMobileView, setIsMobileView] = useState(false);
 
-  // Generate colors for categories
   const categoryColors = useMemo(() => {
-    const categories = Object.keys(locationData);
-    return categories.reduce((acc, category, index) => {
-      acc[category] = getPastelColor(index, categories.length);
+    return allCategories.reduce((acc, category, index) => {
+      acc[category] = getPastelColor(index, allCategories.length);
       return acc;
     }, {} as Record<string, string>);
-  }, [locationData]);
+  }, [allCategories]);
 
   // Add window resize listener
   useEffect(() => {
@@ -104,12 +104,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (selectedCategory && !locationData[selectedCategory]) {
-      onCategoryChange(null);
-    }
-  }, [locationData, selectedCategory, onCategoryChange]);
-
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
       onTagsChange(selectedTags.filter(t => t !== tag));
@@ -134,8 +128,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     return <div className="hidden" />;
   }
 
-  const categories = Object.keys(locationData);
-  const hasLocations = categories.length > 0;
+  const hasLocations = locations.length > 0;
+
+  const mainCategoryColor = (location: Location) => {
+    const main = location.categories[0] ?? 'Other';
+    return categoryColors[main] ?? getPastelColor(0, 1);
+  };
+
+  const mainHoverColor = (location: Location) =>
+    getHoverColor(mainCategoryColor(location));
 
   return (
     <div className="h-full flex flex-col">
@@ -149,8 +150,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               value={selectedCategory || ''}
               onChange={(e) => onCategoryChange(e.target.value || null)}
             >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
+              <option value="">{t('sidebarAllCategories')}</option>
+              {allCategories.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -167,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search locations..."
+                placeholder={t('sidebarSearchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-200 bg-white/50 backdrop-blur"
@@ -194,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               `}
               aria-pressed={isFilterOpen}
               aria-expanded={isFilterOpen}
-              aria-label="Toggle filters"
+              aria-label={t('sidebarFilterAria')}
             >
               <Filter className="w-4 h-4" />
               {selectedTags.length > 0 && (
@@ -218,11 +219,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               >
                 {/* Visibility Settings */}
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Display Settings</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">{t('sidebarDisplaySettings')}</h3>
                   <div className="space-y-2.5">
                     <label className="flex items-center justify-between group cursor-pointer">
                       <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
-                        Show descriptions
+                        {t('sidebarShowDescriptions')}
                       </span>
                       <div className="relative">
                         <button
@@ -254,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </label>
                     <label className="flex items-center justify-between group cursor-pointer">
                       <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
-                        Show tags
+                        {t('sidebarShowTags')}
                       </span>
                       <div className="relative">
                         <button
@@ -292,12 +293,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {/* Tags Section */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-medium text-gray-700">Filter by Tags</h3>
+                    <h3 className="text-sm font-medium text-gray-700">{t('sidebarFilterByTags')}</h3>
                     <button
+                      type="button"
                       onClick={() => onTagsChange([])}
                       className="text-xs text-gray-500 hover:text-gray-700"
                     >
-                      Clear all
+                      {t('sidebarClearAll')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -331,33 +333,33 @@ const Sidebar: React.FC<SidebarProps> = ({
       `}>
         {!hasLocations ? (
           <div className="text-center text-gray-500 mt-4">
-            <p>No locations found</p>
+            <p>{t('sidebarNoLocations')}</p>
             {(searchTerm || selectedTags.length > 0) && (
               <button
+                type="button"
                 onClick={() => {
                   onSearchChange('');
                   onTagsChange([]);
                 }}
                 className="mt-2 text-sm text-blue-600 hover:text-blue-700"
               >
-                Clear all filters
+                {t('sidebarClearFilters')}
               </button>
             )}
           </div>
         ) : (
           <div className="space-y-3">
-            {(selectedCategory ? [selectedCategory] : categories).map((category: string) => (
-              locationData[category]?.map((location) => (
+            {locations.map((location) => (
                 <div 
                   key={location.id} 
-                  onClick={() => onLocationSelect(location.position)}
+                  onClick={() => onLocationSelect(location)}
                   className={`
                     p-3 rounded-lg border border-gray-100 transition-all duration-200 cursor-pointer
                     ${isMobileView ? 'active:bg-gray-50' : 'hover:bg-gray-50'}
                   `}
                   style={{
-                    background: categoryColors[category],
-                    '--hover-bg': getHoverColor(categoryColors[category])
+                    background: mainCategoryColor(location),
+                    '--hover-bg': mainHoverColor(location)
                   } as React.CSSProperties}
                 >
                   <div className="flex gap-3">
@@ -409,12 +411,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onLocationSelect(location.position);
+                          onLocationSelect(location);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 text-gray-700 rounded-md hover:bg-white transition-colors"
                       >
                         <MapPin className="w-3 h-3" />
-                        View on map
+                        {t('sidebarViewOnMap')}
                       </button>
                       <a
                         href={location.website}
@@ -424,12 +426,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 text-gray-700 rounded-md hover:bg-white transition-colors"
                       >
                         <Globe className="w-3 h-3" />
-                        Website
+                        {t('sidebarWebsite')}
                       </a>
                     </div>
                   </div>
                 </div>
-              ))
             ))}
           </div>
         )}

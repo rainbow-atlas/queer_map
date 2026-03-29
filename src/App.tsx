@@ -1,23 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Map } from './components/Map';
 import { Sidebar } from './components/Sidebar';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ChevronLeft, X, Shield, Scale, Cookie, Menu } from 'lucide-react';
 import logo from './assets/logo.svg';
+import { useI18n } from './i18n/I18nContext';
+import { impressumLines } from './i18n/translations';
 
 // Legal Modal Component
 const LegalModal: React.FC<{
-  title: string;
   onClose: () => void;
   type: 'dsgvo' | 'impressum';
-}> = ({ title, onClose, type }) => {
+}> = ({ onClose, type }) => {
+  const { t, ti, locale } = useI18n();
+  const title =
+    type === 'dsgvo' ? t('legalPrivacyModalTitle') : t('legalImprintModalTitle');
+  const vatBodyLines = impressumLines(locale, 'vatBody');
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div 
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4">
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] animate-modal">
-        <div className="flex-none flex items-center justify-between p-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="relative bg-white w-full max-w-full md:max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-1rem)] md:h-[90vh] animate-modal">
+        <div className="flex-none flex items-center justify-between px-4 py-3 md:p-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center gap-3">
             {type === 'dsgvo' ? (
               <Shield className="w-6 h-6 text-pink-600" />
@@ -34,10 +41,18 @@ const LegalModal: React.FC<{
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-white/40 backdrop-blur-sm scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-white/40 backdrop-blur-sm scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <div className="prose prose-sm max-w-none">
             {type === 'dsgvo' ? (
-              <div className="prose prose-sm max-w-none overflow-y-auto px-4" dangerouslySetInnerHTML={{ __html: `
+              <>
+                {locale === 'en' && (
+                  <div className="not-prose max-w-[65ch] mx-auto px-4 mb-4">
+                    <p className="text-sm text-gray-600 border-l-4 border-pink-200 pl-3 py-1 leading-relaxed">
+                      {t('legalDsgvoNoteEn')}
+                    </p>
+                  </div>
+                )}
+                <div className="prose prose-sm max-w-none overflow-y-auto px-4" dangerouslySetInnerHTML={{ __html: `
                 <style>
                   .dsgvo-content { max-width: 65ch; margin: 0 auto; }
                   .dsgvo-content h1 { 
@@ -205,67 +220,137 @@ const LegalModal: React.FC<{
 
                 </div>
               ` }} />
-            ) : (
-              <>
-                <h3>Impressum</h3>
-                <p>Stand: März 2024</p>
-
-                <h4>Angaben gemäß § 5 TMG</h4>
-                <p>
-                  Musterfirma GmbH<br />
-                  Musterstraße 123<br />
-                  12345 Musterstadt<br />
-                  Deutschland
-                </p>
-
-                <h4>Kontakt</h4>
-                <p>
-                  Telefon: +49 (0) 123 456 789<br />
-                  E-Mail: info@musterfirma.de
-                </p>
-
-                <h4>Vertreten durch</h4>
-                <p>
-                  Max Mustermann<br />
-                  Geschäftsführer
-                </p>
-
-                <h4>Registereintrag</h4>
-                <p>
-                  Eintragung im Handelsregister.<br />
-                  Registergericht: Amtsgericht Musterstadt<br />
-                  Registernummer: HRB 12345
-                </p>
-
-                <h4>Umsatzsteuer-ID</h4>
-                <p>
-                  Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:<br />
-                  DE 123 456 789
-                </p>
-
-                <h4>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h4>
-                <p>
-                  Max Mustermann<br />
-                  Musterstraße 123<br />
-                  12345 Musterstadt
-                </p>
-
-                <h4>Streitschlichtung</h4>
-                <p>
-                  Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr/.
-                  Unsere E-Mail-Adresse finden Sie oben im Impressum.
-                </p>
-
-                <h4>Haftung für Inhalte</h4>
-                <p>
-                  Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.
-                </p>
-
-                <h4>Urheberrecht</h4>
-                <p>
-                  Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht.
-                </p>
               </>
+            ) : (
+              <div className="not-prose max-w-[65ch] mx-auto text-gray-700">
+                <p className="text-sm text-gray-500 mb-8 pb-6 border-b border-gray-100">
+                  {ti('stand')}
+                </p>
+
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('tmgHeading')}
+                    </h3>
+                    <address className="not-italic leading-relaxed text-[15px]">
+                      {impressumLines(locale, 'addressBlock').map((line, i) => (
+                        <span key={i}>
+                          {i > 0 && <br />}
+                          {line}
+                        </span>
+                      ))}
+                    </address>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('contactHeading')}
+                    </h3>
+                    <dl className="space-y-1.5 text-[15px] leading-relaxed">
+                      <div className="flex flex-col sm:flex-row sm:gap-2">
+                        <dt className="text-gray-500 shrink-0 sm:min-w-[5rem]">{ti('phoneLabel')}</dt>
+                        <dd>+49 (0) 123 456 789</dd>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:gap-2">
+                        <dt className="text-gray-500 shrink-0 sm:min-w-[5rem]">{ti('emailLabel')}</dt>
+                        <dd>
+                          <a
+                            href="mailto:info@musterfirma.de"
+                            className="text-pink-600 hover:text-pink-700 underline-offset-2 hover:underline"
+                          >
+                            info@musterfirma.de
+                          </a>
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('representedHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">
+                      {impressumLines(locale, 'representedBody').map((line, i) => (
+                        <span key={i}>
+                          {i > 0 && <br />}
+                          {line}
+                        </span>
+                      ))}
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('registerHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">
+                      {impressumLines(locale, 'registerBody').map((line, i) => (
+                        <span key={i}>
+                          {i > 0 && <br />}
+                          {line}
+                        </span>
+                      ))}
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('vatHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">
+                      {vatBodyLines[0]}
+                      <br />
+                      <span className="font-medium text-gray-900">{vatBodyLines[1]}</span>
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('contentRespHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">
+                      {impressumLines(locale, 'contentRespBody').map((line, i) => (
+                        <span key={i}>
+                          {i > 0 && <br />}
+                          {line}
+                        </span>
+                      ))}
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('disputeHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">
+                      {ti('disputeBodyBefore')}{' '}
+                      <a
+                        href="https://ec.europa.eu/consumers/odr/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-pink-600 hover:text-pink-700 underline-offset-2 hover:underline break-all sm:break-normal"
+                      >
+                        ec.europa.eu/consumers/odr
+                      </a>
+                      {ti('disputeBodyAfter')}
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('liabilityHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">{ti('liabilityBody')}</p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
+                      {ti('copyrightHeading')}
+                    </h3>
+                    <p className="leading-relaxed text-[15px]">{ti('copyrightBody')}</p>
+                  </section>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -280,35 +365,39 @@ const CookieBanner: React.FC<{
   onReject: () => void;
   onOpenPrivacy: () => void;
 }> = ({ onAccept, onReject, onOpenPrivacy }) => {
+  const { t } = useI18n();
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg animate-slide-up">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-3 flex-shrink-0">
           <Cookie className="w-5 h-5 text-pink-600" />
-          <span className="font-medium">Cookie-Einstellungen</span>
+          <span className="font-medium">{t('cookieTitle')}</span>
         </div>
         <p className="text-sm text-gray-600 flex-grow">
-          Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung auf unserer Website zu bieten. 
-          Weitere Informationen finden Sie in unserer{' '}
-          <button 
+          {t('cookieBodyBefore')}{' '}
+          <button
+            type="button"
             onClick={onOpenPrivacy}
             className="text-pink-600 hover:text-pink-700 underline"
           >
-            Datenschutzerklärung
-          </button>.
+            {t('cookiePrivacyLink')}
+          </button>
+          {t('cookieBodyAfter')}
         </p>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
+            type="button"
             onClick={onReject}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
-            Ablehnen
+            {t('cookieReject')}
           </button>
           <button
+            type="button"
             onClick={onAccept}
             className="px-4 py-2 text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg transition-colors"
           >
-            Akzeptieren
+            {t('cookieAccept')}
           </button>
         </div>
       </div>
@@ -316,24 +405,126 @@ const CookieBanner: React.FC<{
   );
 };
 
-interface LocationData {
-  [category: string]: Array<{
-    id: number;
-    name: string;
-    position: [number, number];
-    description?: string;
-    website: string;
-    tags?: string[];
-    image: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    additionalInfo?: string;
-  }>;
+interface AppLocation {
+  id: number;
+  name: string;
+  position: [number, number];
+  categories: string[];
+  description?: string;
+  website: string;
+  tags?: string[];
+  image: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  additionalInfo?: string;
+  updatedAt?: string;
+}
+
+/** New format: `{ locations: [...] }`. Legacy: `{ "Category": [ {...} ], ... }` (categories default from bucket key). */
+function normalizeLocationsJson(raw: unknown): { locations: AppLocation[] } {
+  if (!raw || typeof raw !== 'object') {
+    return { locations: [] };
+  }
+  const o = raw as Record<string, unknown>;
+  if (Array.isArray(o.locations)) {
+    const list = (o.locations as AppLocation[]).map((loc) => ({
+      ...loc,
+      categories:
+        Array.isArray(loc.categories) && loc.categories.length > 0
+          ? loc.categories
+          : ['Other'],
+    }));
+    return { locations: list };
+  }
+  const locations: AppLocation[] = [];
+  for (const [bucketKey, locs] of Object.entries(o)) {
+    if (!Array.isArray(locs)) continue;
+    for (const loc of locs) {
+      if (!loc || typeof loc !== 'object') continue;
+      const L = loc as Record<string, unknown>;
+      const legacyCats = L.categories;
+      const categories = Array.isArray(legacyCats)
+        ? (legacyCats as string[]).filter((c): c is string => typeof c === 'string' && c.length > 0)
+        : [bucketKey];
+      locations.push({
+        ...(L as unknown as AppLocation),
+        categories,
+      });
+    }
+  }
+  return { locations };
+}
+
+/** Same rules as the sidebar list: category, tags (OR), and search text. */
+function filterLocationsBySidebarFilters(
+  list: AppLocation[],
+  selectedCategory: string | null,
+  selectedTags: string[],
+  searchTerm: string
+): AppLocation[] {
+  const q = searchTerm.trim().toLowerCase();
+  return list.filter((location) => {
+    if (selectedCategory && !location.categories.includes(selectedCategory)) {
+      return false;
+    }
+    const matchesSearch =
+      q === '' ||
+      location.name.toLowerCase().includes(q) ||
+      location.description?.toLowerCase().includes(q) ||
+      location.categories.some((c) => c.toLowerCase().includes(q));
+    const matchesTags =
+      selectedTags.length === 0 ||
+      location.tags?.some((tag) => selectedTags.includes(tag));
+    return matchesSearch && matchesTags;
+  });
+}
+
+function fitMapBoundsToLocations(
+  locs: AppLocation[],
+  setMapCenter: (c: [number, number]) => void,
+  setMapZoom: (z: number) => void,
+  setCenterTimestamp: (t: number) => void
+): void {
+  if (locs.length === 0) return;
+  if (locs.length === 1) {
+    const [lat, lng] = locs[0].position;
+    setMapCenter([lat, lng]);
+    setMapZoom(15);
+    setCenterTimestamp(Date.now());
+    return;
+  }
+  const bounds = locs.reduce(
+    (acc, location) => {
+      const [lat, lng] = location.position;
+      return {
+        minLat: Math.min(acc.minLat, lat),
+        maxLat: Math.max(acc.maxLat, lat),
+        minLng: Math.min(acc.minLng, lng),
+        maxLng: Math.max(acc.maxLng, lng),
+      };
+    },
+    {
+      minLat: Infinity,
+      maxLat: -Infinity,
+      minLng: Infinity,
+      maxLng: -Infinity,
+    }
+  );
+  const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+  const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+  const latDiff = bounds.maxLat - bounds.minLat;
+  const lngDiff = bounds.maxLng - bounds.minLng;
+  const maxDiff = Math.max(latDiff, lngDiff);
+  const zoom = Math.min(15, Math.max(5, Math.floor(15.5 - Math.log2(maxDiff * 111))));
+  setMapCenter([centerLat, centerLng]);
+  setMapZoom(zoom);
+  setCenterTimestamp(Date.now());
 }
 
 function App() {
-  const [locationData, setLocationData] = useState<LocationData>({});
+  const { t } = useI18n();
+  const [locations, setLocations] = useState<AppLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
@@ -344,6 +535,24 @@ function App() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hideLegal, setHideLegal] = useState(false);
+  const [hideMapZoom, setHideMapZoom] = useState(false);
+  const [hideMapSettings, setHideMapSettings] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
+  /** Set when URL contains ?location=&lt;id&gt; so the map skips fit-all and opens the pin. */
+  const [deepLinkLocationId, setDeepLinkLocationId] = useState<number | null>(null);
+  const [deepLinkLocationDetail, setDeepLinkLocationDetail] = useState<'modal' | 'preview'>('modal');
+  /** True when load used ?category / ?tags (embed preview) so MapUpdater does not fit all pins over the filtered view. */
+  const [urlHadFilterParams, setUrlHadFilterParams] = useState(false);
+
+  // Check if in iframe
+  useEffect(() => {
+    try {
+      setIsInIframe(window.self !== window.top);
+    } catch (e) {
+      // If we can't access window.top due to security restrictions, we're in an iframe
+      setIsInIframe(true);
+    }
+  }, []);
 
   // Handle category change
   const handleCategoryChange = (category: string | null) => {
@@ -352,54 +561,13 @@ function App() {
       updateUrl(category, selectedTags, isFullscreen, hideLegal);
     }
 
-    // If a category is selected, center the map on its pins
-    if (category && locationData[category]) {
-      const categoryLocations = locationData[category];
-      if (categoryLocations.length > 0) {
-        if (categoryLocations.length === 1) {
-          // For single pin, just center on it with a fixed zoom
-          const [lat, lng] = categoryLocations[0].position;
-          setMapCenter([lat, lng]);
-          setMapZoom(15); // Fixed zoom level for single pins
-          setCenterTimestamp(Date.now());
-        } else {
-          // Calculate the center point of all pins in the category
-          const bounds = categoryLocations.reduce(
-            (bounds, location) => {
-              const [lat, lng] = location.position;
-              return {
-                minLat: Math.min(bounds.minLat, lat),
-                maxLat: Math.max(bounds.maxLat, lat),
-                minLng: Math.min(bounds.minLng, lng),
-                maxLng: Math.max(bounds.maxLng, lng),
-              };
-            },
-            {
-              minLat: Infinity,
-              maxLat: -Infinity,
-              minLng: Infinity,
-              maxLng: -Infinity,
-            }
-          );
-
-          // Calculate center point
-          const centerLat = (bounds.minLat + bounds.maxLat) / 2;
-          const centerLng = (bounds.minLng + bounds.maxLng) / 2;
-          
-          // Calculate zoom level based on the spread of points
-          const latDiff = bounds.maxLat - bounds.minLat;
-          const lngDiff = bounds.maxLng - bounds.minLng;
-          const maxDiff = Math.max(latDiff, lngDiff);
-          // Ensure zoom level is between 5 and 15
-          const zoom = Math.min(15, Math.max(5, Math.floor(15.5 - Math.log2(maxDiff * 111))));
-
-          // Update map center and zoom
-          setMapCenter([centerLat, centerLng]);
-          setMapZoom(zoom);
-          setCenterTimestamp(Date.now());
-        }
-      }
-    }
+    const visible = filterLocationsBySidebarFilters(
+      locations,
+      category,
+      selectedTags,
+      searchTerm
+    );
+    fitMapBoundsToLocations(visible, setMapCenter, setMapZoom, setCenterTimestamp);
   };
 
   // Handle tags change
@@ -408,6 +576,13 @@ function App() {
     if (!isInitialLoad) {
       updateUrl(selectedCategory, tags, isFullscreen, hideLegal);
     }
+    const visible = filterLocationsBySidebarFilters(
+      locations,
+      selectedCategory,
+      tags,
+      searchTerm
+    );
+    fitMapBoundsToLocations(visible, setMapCenter, setMapZoom, setCenterTimestamp);
   };
 
   // Handle fullscreen toggle
@@ -431,7 +606,9 @@ function App() {
   // Update URL function
   const updateUrl = (category: string | null, tags: string[], fullscreen: boolean, hideLegal: boolean) => {
     const params = new URLSearchParams(window.location.search);
-    
+    params.delete('location');
+    params.delete('locationDetail');
+
     if (category) {
       params.set('category', category);
     } else {
@@ -460,37 +637,86 @@ function App() {
     window.history.replaceState({}, '', newUrl);
   };
 
-  // Fetch location data
+  // Load prebuilt static location data
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwozMLiNs3aWHsGkfP7nlAE92a0HZ4WMKQqARIMoTAxUx8ad8YcLPUADaebjNqrJiBL/exec');
+        // Use Vite base URL so it works both locally and on GitHub Pages
+        const base = (import.meta as any).env.BASE_URL || '/';
+        const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+        const url = `${normalizedBase}/locations.json`;
+
+        const response = await fetch(url, { cache: 'no-cache' });
         if (!response.ok) {
-          throw new Error('Failed to fetch locations');
+          throw new Error('Failed to load locations.json');
         }
-        const data = await response.json();
-        setLocationData(data);
-        
+        const raw = await response.json();
+        const { locations: next } = normalizeLocationsJson(raw);
+        setLocations(next);
+
         // After data is loaded, set the category from URL if it exists
         const params = new URLSearchParams(window.location.search);
         const category = params.get('category');
-        const tags = params.get('tags')?.split(',') || [];
+        const tagsRaw = params.get('tags')?.split(',') || [];
+        const tags = tagsRaw.map((t) => t.trim()).filter(Boolean);
         const fullscreen = params.get('fullscreen') === 'true';
         const hideLegal = params.get('hideLegal') === 'true';
-        
-        if (category && data[category]) {
-          setSelectedCategory(category);
+        const hideMapZoomParam = params.get('hideMapZoom') === 'true';
+        const hideMapSettingsParam = params.get('hideMapSettings') === 'true';
+
+        const names = new Set<string>();
+        for (const loc of next) {
+          for (const c of loc.categories ?? []) names.add(c);
         }
-        if (tags.length > 0) {
-          setSelectedTags(tags);
+
+        const locationParam = params.get('location');
+        let deepLinked: AppLocation | null = null;
+        if (locationParam) {
+          const idNum = parseInt(locationParam, 10);
+          if (Number.isFinite(idNum)) {
+            deepLinked = next.find((l) => l.id === idNum) ?? null;
+          }
         }
+
+        if (deepLinked) {
+          const cat = deepLinked.categories[0];
+          if (cat) setSelectedCategory(cat);
+          setMapCenter(deepLinked.position);
+          setMapZoom(16);
+          setCenterTimestamp(Date.now());
+          setDeepLinkLocationId(deepLinked.id);
+          setDeepLinkLocationDetail(params.get('locationDetail') === 'preview' ? 'preview' : 'modal');
+          if (tags.length > 0) {
+            const tagMatch = deepLinked.tags?.some((t) => tags.includes(t));
+            setSelectedTags(tagMatch ? tags : []);
+          }
+        } else {
+          const urlCategory = category && names.has(category) ? category : null;
+          if (urlCategory) {
+            setSelectedCategory(urlCategory);
+          }
+          if (tags.length > 0) {
+            setSelectedTags(tags);
+          }
+          const hadUrlFilters = Boolean(urlCategory) || tags.length > 0;
+          if (hadUrlFilters) {
+            const visible = filterLocationsBySidebarFilters(next, urlCategory, tags, '');
+            if (visible.length > 0) {
+              setUrlHadFilterParams(true);
+              fitMapBoundsToLocations(visible, setMapCenter, setMapZoom, setCenterTimestamp);
+            }
+          }
+        }
+        // Only set fullscreen if explicitly requested in URL params
         setIsFullscreen(fullscreen);
         setHideLegal(hideLegal);
-        
+        setHideMapZoom(hideMapZoomParam);
+        setHideMapSettings(hideMapSettingsParam);
+
         setLoading(false);
         setIsInitialLoad(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : 'GENERIC_LOAD');
         setLoading(false);
         setIsInitialLoad(false);
       }
@@ -499,8 +725,31 @@ function App() {
     fetchLocations();
   }, []);
 
+  const allCategories = useMemo(() => {
+    const s = new Set<string>();
+    for (const loc of locations) {
+      for (const c of loc.categories ?? []) {
+        s.add(c);
+      }
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [locations]);
+
+  /**
+   * Same hue ladder as sidebar cards (`getPastelColor`: hsl(hue, 35%, 97%)).
+   * Pins use lower lightness so the tint is visible on map tiles (97% reads as white).
+   */
+  const categoryPinColors = useMemo(() => {
+    const n = Math.max(allCategories.length, 1);
+    return allCategories.reduce((acc, category, index) => {
+      const hue = (index / n) * 360;
+      acc[category] = `hsl(${hue}, 38%, 72%)`;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [allCategories]);
+
   // Calculate initial map center and bounds
-  const allLocations = Object.values(locationData).flat();
+  const allLocations = locations;
   const initialBounds = allLocations.reduce(
     (bounds, location) => {
       const [lat, lng] = location.position;
@@ -541,62 +790,42 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [centerTimestamp, setCenterTimestamp] = useState(Date.now());
   const [legalModal, setLegalModal] = useState<'dsgvo' | 'impressum' | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    id: number;
-    name: string;
-    position: [number, number];
-    description?: string;
-    website: string;
-    tags?: string[];
-    image: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    additionalInfo?: string;
-  } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<AppLocation | null>(null);
+  const [sidebarPinnedTooltipId, setSidebarPinnedTooltipId] = useState<number | null>(null);
 
-  const handleLocationSelect = (coordinates: [number, number]) => {
-    setMapCenter(coordinates);
+  const handleLocationSelect = (loc: AppLocation) => {
+    setMapCenter(loc.position);
     setMapZoom(16);
     setCenterTimestamp(Date.now());
+    setSidebarPinnedTooltipId(loc.id);
   };
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  // Get all unique tags
-  const allTags = Array.from(
-    new Set(
-      Object.values(locationData)
-        .flat()
-        .flatMap(location => location.tags || [])
-    )
-  ).sort();
+  const allTags = useMemo(
+    () =>
+      Array.from(
+        new Set(locations.flatMap((location) => location.tags || []))
+      ).sort(),
+    [locations]
+  );
 
-  // Filter locations based on search term and selected tags (OR logic)
-  const filteredLocations = Object.entries(locationData).reduce((acc, [category, locations]) => {
-    // Skip if category is selected and this isn't it
-    if (selectedCategory && category !== selectedCategory) {
-      return acc;
+  const filteredLocations = useMemo(() => {
+    return filterLocationsBySidebarFilters(
+      locations,
+      selectedCategory,
+      selectedTags,
+      searchTerm
+    ).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [locations, selectedCategory, searchTerm, selectedTags]);
+
+  useEffect(() => {
+    if (selectedCategory && !allCategories.includes(selectedCategory)) {
+      setSelectedCategory(null);
     }
-
-    const filtered = locations.filter(location => {
-      const matchesSearch = searchTerm === '' || 
-        location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        location.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesTags = selectedTags.length === 0 || 
-        location.tags?.some(tag => selectedTags.includes(tag));
-
-      return matchesSearch && matchesTags;
-    });
-
-    if (filtered.length > 0) {
-      acc[category] = filtered;
-    }
-    return acc;
-  }, {} as LocationData);
+  }, [selectedCategory, allCategories]);
 
   // Add window resize listener
   useEffect(() => {
@@ -613,8 +842,8 @@ function App() {
   }, []);
 
   // Close mobile menu when location is selected
-  const handleMobileLocationSelect = (position: [number, number]) => {
-    handleLocationSelect(position);
+  const handleMobileLocationSelect = (loc: AppLocation) => {
+    handleLocationSelect(loc);
     setIsMobileMenuOpen(false);
   };
 
@@ -647,7 +876,7 @@ function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading locations...</p>
+          <p className="text-gray-600">{t('loadingLocations')}</p>
         </div>
       </div>
     );
@@ -658,13 +887,14 @@ function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p className="text-red-700">{error}</p>
+            <p className="text-red-700">{error === 'GENERIC_LOAD' ? t('loadError') : error}</p>
           </div>
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Try Again
+            {t('tryAgain')}
           </button>
         </div>
       </div>
@@ -673,32 +903,71 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Header - Always visible */}
-      <div className="fixed top-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4 w-[340px]">
-        <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
-        <span className="text-xl font-semibold text-gray-900">queer_map</span>
-      </div>
+      {/* Desktop Header */}
+      {!isMobileView && (
+        <div className="fixed top-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center gap-5 p-4 w-[340px]">
+          <img src={logo} alt={t('logoAlt')} className="w-10 h-10" />
+          <span className="text-xl font-semibold text-gray-900">{t('appTitle')}</span>
+          {/* Debugging indicator - only show when a special parameter is present */}
+          {new URLSearchParams(window.location.search).get('debug') === 'true' && (
+            <div className="text-xs text-gray-600 ml-2">
+              {isInIframe ? 'In iframe' : 'Not in iframe'} | 
+              {isFullscreen ? 'Fullscreen' : 'With sidebar'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mobile Menu Button + Floating Logo */}
+      {isMobileView && !isFullscreen && (
+        <>
+          <button
+            type="button"
+            className="mobile-menu-button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label={t('openMenu')}
+          >
+            <Menu className="w-5 h-5 text-gray-800" />
+          </button>
+          <div className="floating-logo">
+            <img src={logo} alt={t('logoAlt')} className="w-6 h-6" />
+            <span className="text-sm font-semibold text-gray-900">{t('appTitle')}</span>
+            {new URLSearchParams(window.location.search).get('debug') === 'true' && (
+              <span className="text-[10px] text-gray-500">
+                {isInIframe ? 'In iframe' : 'Not in iframe'} | 
+                {isFullscreen ? 'Fullscreen' : 'With sidebar'}
+              </span>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Legal Links - Only show when not hidden and in fullscreen mode */}
       {!hideLegal && isFullscreen && (
-        <div className="fixed bottom-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        <div className="fixed bottom-6 left-6 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-visible">
           <div className="p-2">
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setLegalModal('dsgvo')}
-                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
               >
-                <Shield className="w-4 h-4" />
-                <span className="text-sm">DSGVO</span>
+                <Shield className="w-4 h-4 shrink-0" />
+                <span className="text-sm truncate">{t('legalPrivacy')}</span>
               </button>
-              <div className="w-px h-6 bg-gray-200" />
+              <div className="w-px h-6 bg-gray-200 shrink-0" />
               <button
+                type="button"
                 onClick={() => setLegalModal('impressum')}
-                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
               >
-                <Scale className="w-4 h-4" />
-                <span className="text-sm">Impressum</span>
+                <Scale className="w-4 h-4 shrink-0" />
+                <span className="text-sm truncate">{t('legalImprint')}</span>
               </button>
+              <div className="w-px h-6 bg-gray-200 shrink-0" />
+              <div className="flex-1 min-w-[4.5rem] max-w-[6rem]">
+                <LanguageSwitcher />
+              </div>
             </div>
           </div>
         </div>
@@ -717,8 +986,8 @@ function App() {
               {/* Mobile Header */}
               <div className="mobile-sidebar-header">
                 <div className="flex items-center gap-3">
-                  <img src={logo} alt="Queer Map Logo" className="w-10 h-10" />
-                  <span className="text-xl font-semibold text-gray-900">queer_map</span>
+                  <img src={logo} alt={t('logoAlt')} className="w-10 h-10" />
+                  <span className="text-xl font-semibold text-gray-900">{t('appTitle')}</span>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -731,7 +1000,8 @@ function App() {
               {/* Sidebar Content */}
               <div className="flex-1 overflow-hidden">
                 <Sidebar 
-                  locationData={filteredLocations}
+                  locations={filteredLocations}
+                  allCategories={allCategories}
                   onLocationSelect={handleMobileLocationSelect}
                   isCollapsed={isSidebarCollapsed}
                   searchTerm={searchTerm}
@@ -746,24 +1016,30 @@ function App() {
 
               {/* Legal Links - Only show when not hidden */}
               {!hideLegal && (
-                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden mt-4">
+                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-visible mt-4">
                   <div className="p-2">
                     <div className="flex items-center gap-1">
                       <button
+                        type="button"
                         onClick={() => setLegalModal('dsgvo')}
-                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
                       >
-                        <Shield className="w-4 h-4" />
-                        <span className="text-sm">DSGVO</span>
+                        <Shield className="w-4 h-4 shrink-0" />
+                        <span className="text-sm truncate">{t('legalPrivacy')}</span>
                       </button>
-                      <div className="w-px h-6 bg-gray-200" />
+                      <div className="w-px h-6 bg-gray-200 shrink-0" />
                       <button
+                        type="button"
                         onClick={() => setLegalModal('impressum')}
-                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
                       >
-                        <Scale className="w-4 h-4" />
-                        <span className="text-sm">Impressum</span>
+                        <Scale className="w-4 h-4 shrink-0" />
+                        <span className="text-sm truncate">{t('legalImprint')}</span>
                       </button>
+                      <div className="w-px h-6 bg-gray-200 shrink-0" />
+                      <div className="flex-1 min-w-[4.5rem] max-w-[6rem]">
+                        <LanguageSwitcher />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -782,7 +1058,8 @@ function App() {
                   ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}
                 `}>
                   <Sidebar 
-                    locationData={filteredLocations}
+                    locations={filteredLocations}
+                    allCategories={allCategories}
                     onLocationSelect={handleLocationSelect}
                     isCollapsed={isSidebarCollapsed}
                     searchTerm={searchTerm}
@@ -798,34 +1075,43 @@ function App() {
 
               {/* Legal Links - Only show when not hidden */}
               {!hideLegal && (
-                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                <div className="flex-none bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 overflow-visible">
                   <div className="p-2 space-y-2">
                     <button
+                      type="button"
                       onClick={toggleSidebar}
                       className="w-full flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
                     >
                       <ChevronLeft 
                         className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`}
                       />
-                      <span className="text-sm">{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
+                      <span className="text-sm">
+                        {isSidebarCollapsed ? t('showSidebar') : t('hideSidebar')}
+                      </span>
                     </button>
                     <div className="border-t border-gray-100" />
                     <div className="flex items-center gap-1">
                       <button
+                        type="button"
                         onClick={() => setLegalModal('dsgvo')}
-                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
                       >
-                        <Shield className="w-4 h-4" />
-                        <span className="text-sm">DSGVO</span>
+                        <Shield className="w-4 h-4 shrink-0" />
+                        <span className="text-sm truncate">{t('legalPrivacy')}</span>
                       </button>
-                      <div className="w-px h-6 bg-gray-200" />
+                      <div className="w-px h-6 bg-gray-200 shrink-0" />
                       <button
+                        type="button"
                         onClick={() => setLegalModal('impressum')}
-                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors min-w-0"
                       >
-                        <Scale className="w-4 h-4" />
-                        <span className="text-sm">Impressum</span>
+                        <Scale className="w-4 h-4 shrink-0" />
+                        <span className="text-sm truncate">{t('legalImprint')}</span>
                       </button>
+                      <div className="w-px h-6 bg-gray-200 shrink-0" />
+                      <div className="flex-1 min-w-[4.5rem] max-w-[6rem]">
+                        <LanguageSwitcher />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -840,7 +1126,7 @@ function App() {
         <Map 
           center={mapCenter}
           zoom={mapZoom}
-          markers={Object.values(filteredLocations).flat()}
+          markers={filteredLocations}
           initialBounds={allLocations.length > 0 ? {
             minLat: initialBounds.minLat,
             maxLat: initialBounds.maxLat,
@@ -849,6 +1135,14 @@ function App() {
           } : undefined}
           centerTimestamp={centerTimestamp}
           sidebarCollapsed={!isMobileView && isSidebarCollapsed}
+          skipInitialFitBounds={deepLinkLocationId != null || urlHadFilterParams}
+          autoOpenLocationId={deepLinkLocationId}
+          autoOpenLocationDetail={deepLinkLocationId != null ? deepLinkLocationDetail : 'modal'}
+          categoryPinColors={categoryPinColors}
+          pinnedTooltipLocationId={sidebarPinnedTooltipId}
+          onPinnedTooltipDismiss={() => setSidebarPinnedTooltipId(null)}
+          hideMapZoom={hideMapZoom}
+          hideMapSettings={hideMapSettings}
         />
       </div>
 
@@ -871,18 +1165,10 @@ function App() {
 
       {/* Legal Modals */}
       {legalModal === 'dsgvo' && (
-        <LegalModal
-          title="Datenschutzerklärung (DSGVO)"
-          type="dsgvo"
-          onClose={() => setLegalModal(null)}
-        />
+        <LegalModal type="dsgvo" onClose={() => setLegalModal(null)} />
       )}
       {legalModal === 'impressum' && (
-        <LegalModal
-          title="Impressum"
-          type="impressum"
-          onClose={() => setLegalModal(null)}
-        />
+        <LegalModal type="impressum" onClose={() => setLegalModal(null)} />
       )}
 
       {/* Cookie Banner */}

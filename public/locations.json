@@ -1,0 +1,186 @@
+{
+  "locations": [
+    {
+      "id": 1,
+      "name": "Tower of London",
+      "position": [
+        51.5081,
+        -0.0759
+      ],
+      "categories": [
+        "Gesundheit"
+      ],
+      "description": "Historic castle and fortress",
+      "website": "https://www.hrp.org.uk/tower-of-london",
+      "tags": [
+        "castle"
+      ],
+      "image": "https://www.hrp.org.uk/assets/images/hrp-logo.svg",
+      "address": "St Katharine's & Wapping, London EC3N 4AB, United Kingdom",
+      "phone": "",
+      "email": "info@hrp.org.uk",
+      "additionalInfo": "The Tower of London, officially Her Majesty's Royal Palace and Fortress of the Tower of London, is a historic castle and fortress located on the north bank of the River Thames in central London.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Westminster Abbey",
+      "position": [
+        51.4994,
+        -0.1276
+      ],
+      "categories": [
+        "Religious Site"
+      ],
+      "description": "Gothic church and UNESCO site",
+      "website": "https://www.westminster-abbey.org",
+      "image": "",
+      "address": "20 Deans Yd, Westminster, London SW1P 3PA, United Kingdom",
+      "phone": "",
+      "email": "info@westminster-abbey.org",
+      "additionalInfo": "Westminster Abbey, formally titled the Collegiate Church of Saint Peter at Westminster, is a historic, mainly Gothic abbey church in the City of Westminster, London, England.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "British Museum",
+      "position": [
+        51.5194,
+        -0.127
+      ],
+      "categories": [
+        "Lokale/Bars/Clubs"
+      ],
+      "description": "World culture and history museum",
+      "website": "https://www.britishmuseum.org",
+      "image": "",
+      "address": "Great Russell St, Bloomsbury, London WC1B 3DG, United Kingdom",
+      "phone": "",
+      "email": "information@britishmuseum.org",
+      "additionalInfo": "The British Museum is a public museum dedicated to human history, art, and culture. Its permanent collection of eight million works is among the largest and most comprehensive in existence.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "Natural History Museum",
+      "position": [
+        51.4967,
+        -0.1764
+      ],
+      "categories": [
+        "Lokale/Bars/Clubs"
+      ],
+      "description": "Natural history collections",
+      "website": "https://www.nhm.ac.uk",
+      "image": "",
+      "address": "Cromwell Rd, South Kensington, London SW7 5BD, United Kingdom",
+      "phone": "",
+      "email": "info@nhm.ac.uk",
+      "additionalInfo": "The Natural History Museum in London is a natural history museum that exhibits a vast range of specimens from various segments of natural history.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "Hyde Park",
+      "position": [
+        51.5073,
+        -0.1657
+      ],
+      "categories": [
+        "Park"
+      ],
+      "description": "Royal park in central London",
+      "website": "https://www.royalparks.org.uk/parks/hyde-park",
+      "image": "",
+      "address": "Hyde Park, London W2 2UH, United Kingdom",
+      "phone": "",
+      "email": "hyde@royalparks.org.uk",
+      "additionalInfo": "Hyde Park is a Grade I-listed major park in Central London. It is the largest of four Royal Parks that form a chain from the entrance of Kensington Palace through Kensington Gardens and Hyde Park.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "name": "Regent's Park",
+      "position": [
+        51.5313,
+        -0.157
+      ],
+      "categories": [
+        "Park"
+      ],
+      "description": "Historic park and gardens",
+      "website": "https://www.royalparks.org.uk/parks/the-regents-park",
+      "image": "",
+      "address": "Chester Rd, London NW1 4NR, United Kingdom",
+      "phone": "",
+      "email": "regents@royalparks.org.uk",
+      "additionalInfo": "The Regent's Park is one of London's eight Royal Parks and covers an area of 395 acres. It includes stunning rose gardens with more than 12,000 roses of 400 varieties.",
+      "updatedAt": "2025-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "name": "Test",
+      "position": [
+        48.3013874,
+        14.3113244
+      ],
+      "categories": [
+        "Other"
+      ],
+      "description": "",
+      "website": "https://keep.google.com/#home",
+      "image": "",
+      "address": "Garnisonstraße 21, Linz, Austria",
+      "phone": "",
+      "email": "p42726@fhooe.at",
+      "additionalInfo": "",
+      "updatedAt": "2025-05-07T00:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "name": "HOSI Linz",
+      "position": [
+        48.2989866,
+        14.2981235
+      ],
+      "categories": [
+        "Beratung"
+      ],
+      "description": "Die queere Menschenrechtsbewegung in Oberösterreich",
+      "website": "https://www.hosilinz.at",
+      "image": "https://www.hosilinz.at/wp-content/uploads/2018/04/hosilinz_logo_pos_4c_ohne_sub_120px.png",
+      "address": "Schillerstraße 49, Linz, Österreich",
+      "phone": "43732609898",
+      "email": "ooe@hosilinz.at",
+      "additionalInfo": "Seit mehr als 40 Jahren ist die HOSI Linz die Interessensvertretung für queere* Menschen in Oberösterreich. Mehr noch: Sie ist Anlaufstelle bei sozialen, rechtlichen und medizinischen Problemen, Sprachrohr für die Anliegen der queeren* Community in Ober­österreich und Ansprechpartnerin für Politik, Medien und Gesellschaft.\n\n🏳️‍🌈 Die queere Menschenrechtsbewegung in OÖ https://www.instagram.com/hosilinz/ 🏳️‍⚧️ Organisator*in @linzpride 🏳️‍🌈 Lokalbetreiber*in @fortynine_linz, Home of @kiki.hosilinz",
+      "updatedAt": "2026-03-16T00:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "name": "AidsHilfe Oberösterreich",
+      "position": [
+        48.3142984,
+        14.2824948
+      ],
+      "categories": [
+        "Beratung",
+        "Gesundheit"
+      ],
+      "description": "AidsHilfe",
+      "website": "https://www.aidshilfe-ooe.at/",
+      "tags": [
+        "AIDS",
+        "HIV",
+        "PrEP",
+        "STIs",
+        "Sex"
+      ],
+      "image": "https://www.aidshilfe-ooe.at/wp-content/uploads/2024/11/aidshilfe-logo.jpg",
+      "address": "Blütenstraße 15, Linz, Austria",
+      "phone": "0732 2170",
+      "email": "office@aidshilfe-ooe.at",
+      "additionalInfo": "Testung",
+      "updatedAt": "2026-03-29T00:00:00.000Z"
+    }
+  ]
+}
