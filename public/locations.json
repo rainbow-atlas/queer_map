@@ -1,27 +1,18 @@
 {
+  "categories": {
+    "Gesundheit": "#06B6D4",
+    "Religious Site": "#8B5CF6",
+    "Lokale/Bars/Clubs": "#3B82F6",
+    "Park": "#6366F1",
+    "Beratung": "#3CC86F",
+    "Cafe": "#EAB308"
+  },
+  "legal": {
+    "impressum": {
+      "de": "<div>Stand: März 2026</div><div><br></div><div><b>Angaben gemäß § 5 TMG</b></div><div>Musterfirma GmbH</div><div>Musterstraße 123</div><div>12345 Musterstadt</div><div>Deutschland</div><div><br></div><div><br></div><div><b>Kontakt</b></div><div>Telefon: +49 (0) 123 456 789</div><div>E-Mail: info@musterfirma.de</div><div><br></div><div><b>Vertreten durch</b></div><div>Max Mustermann</div><div>Geschäftsführer</div><div><br></div><div><b>Registereintrag</b></div><div>Eintragung im Handelsregister.</div><div>Registergericht: Amtsgericht Musterstadt</div><div>Registernummer: HRB 12345</div><div><br></div><div><b>Umsatzsteuer-ID</b></div><div>Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:</div><div>DE 123 456 789</div><div><br></div><div><b>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</b></div><div>Max Mustermann</div><div>Musterstraße 123</div><div>12345 Musterstadt</div><div><br></div><div><b>Streitschlichtung</b></div><div>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: [ec.europa.eu/consumers/odr](https://ec.europa.eu/consumers/odr). Unsere E-Mail-Adresse finden Sie oben im Impressum.</div><div><br></div><div><b>Haftung für Inhalte</b></div><div>Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.</div><div><br></div><div><b>Urheberrecht</b></div><div>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht.</div>"
+    }
+  },
   "locations": [
-    {
-      "id": 1,
-      "name": "Tower of London",
-      "position": [
-        51.5081,
-        -0.0759
-      ],
-      "categories": [
-        "Gesundheit"
-      ],
-      "description": "Historic castle and fortress",
-      "website": "https://www.hrp.org.uk/tower-of-london",
-      "tags": [
-        "castle"
-      ],
-      "image": "https://www.hrp.org.uk/assets/images/hrp-logo.svg",
-      "address": "St Katharine's & Wapping, London EC3N 4AB, United Kingdom",
-      "phone": "",
-      "email": "info@hrp.org.uk",
-      "additionalInfo": "The Tower of London, officially Her Majesty's Royal Palace and Fortress of the Tower of London, is a historic castle and fortress located on the north bank of the River Thames in central London.",
-      "updatedAt": "2025-02-25T00:00:00.000Z"
-    },
     {
       "id": 2,
       "name": "Westminster Abbey",
@@ -38,26 +29,10 @@
       "address": "20 Deans Yd, Westminster, London SW1P 3PA, United Kingdom",
       "phone": "",
       "email": "info@westminster-abbey.org",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
       "additionalInfo": "Westminster Abbey, formally titled the Collegiate Church of Saint Peter at Westminster, is a historic, mainly Gothic abbey church in the City of Westminster, London, England.",
-      "updatedAt": "2025-02-25T00:00:00.000Z"
-    },
-    {
-      "id": 3,
-      "name": "British Museum",
-      "position": [
-        51.5194,
-        -0.127
-      ],
-      "categories": [
-        "Lokale/Bars/Clubs"
-      ],
-      "description": "World culture and history museum",
-      "website": "https://www.britishmuseum.org",
-      "image": "",
-      "address": "Great Russell St, Bloomsbury, London WC1B 3DG, United Kingdom",
-      "phone": "",
-      "email": "information@britishmuseum.org",
-      "additionalInfo": "The British Museum is a public museum dedicated to human history, art, and culture. Its permanent collection of eight million works is among the largest and most comprehensive in existence.",
       "updatedAt": "2025-02-25T00:00:00.000Z"
     },
     {
@@ -76,26 +51,10 @@
       "address": "Cromwell Rd, South Kensington, London SW7 5BD, United Kingdom",
       "phone": "",
       "email": "info@nhm.ac.uk",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
       "additionalInfo": "The Natural History Museum in London is a natural history museum that exhibits a vast range of specimens from various segments of natural history.",
-      "updatedAt": "2025-02-25T00:00:00.000Z"
-    },
-    {
-      "id": 5,
-      "name": "Hyde Park",
-      "position": [
-        51.5073,
-        -0.1657
-      ],
-      "categories": [
-        "Park"
-      ],
-      "description": "Royal park in central London",
-      "website": "https://www.royalparks.org.uk/parks/hyde-park",
-      "image": "",
-      "address": "Hyde Park, London W2 2UH, United Kingdom",
-      "phone": "",
-      "email": "hyde@royalparks.org.uk",
-      "additionalInfo": "Hyde Park is a Grade I-listed major park in Central London. It is the largest of four Royal Parks that form a chain from the entrance of Kensington Palace through Kensington Gardens and Hyde Park.",
       "updatedAt": "2025-02-25T00:00:00.000Z"
     },
     {
@@ -114,6 +73,9 @@
       "address": "Chester Rd, London NW1 4NR, United Kingdom",
       "phone": "",
       "email": "regents@royalparks.org.uk",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
       "additionalInfo": "The Regent's Park is one of London's eight Royal Parks and covers an area of 395 acres. It includes stunning rose gardens with more than 12,000 roses of 400 varieties.",
       "updatedAt": "2025-02-25T00:00:00.000Z"
     },
@@ -133,6 +95,9 @@
       "address": "Garnisonstraße 21, Linz, Austria",
       "phone": "",
       "email": "p42726@fhooe.at",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
       "additionalInfo": "",
       "updatedAt": "2025-05-07T00:00:00.000Z"
     },
@@ -152,8 +117,11 @@
       "address": "Schillerstraße 49, Linz, Österreich",
       "phone": "43732609898",
       "email": "ooe@hosilinz.at",
-      "additionalInfo": "Seit mehr als 40 Jahren ist die HOSI Linz die Interessensvertretung für queere* Menschen in Oberösterreich. Mehr noch: Sie ist Anlaufstelle bei sozialen, rechtlichen und medizinischen Problemen, Sprachrohr für die Anliegen der queeren* Community in Ober­österreich und Ansprechpartnerin für Politik, Medien und Gesellschaft.\n\n🏳️‍🌈 Die queere Menschenrechtsbewegung in OÖ https://www.instagram.com/hosilinz/ 🏳️‍⚧️ Organisator*in @linzpride 🏳️‍🌈 Lokalbetreiber*in @fortynine_linz, Home of @kiki.hosilinz",
-      "updatedAt": "2026-03-16T00:00:00.000Z"
+      "instagram": "https://www.instagram.com/hosilinz/",
+      "facebook": "",
+      "additionalWebLinks": [],
+      "additionalInfo": "Seit mehr als 40 Jahren ist die HOSI Linz die Interessensvertretung für queere* Menschen in Oberösterreich. Mehr noch: Sie ist Anlaufstelle bei sozialen, rechtlichen und medizinischen Problemen, Sprachrohr für die Anliegen der queeren* Community in Ober­österreich und Ansprechpartnerin für Politik, Medien und Gesellschaft.\n\n🏳️‍🌈 Die queere Menschenrechtsbewegung in OÖ \n🏳️‍⚧️ Organisator*in \n🏳️‍🌈 Lokalbetreiber*in @fortynine_linz, \nHome of @kiki.hosilinz",
+      "updatedAt": "2026-03-30T00:00:00.000Z"
     },
     {
       "id": 8,
@@ -175,11 +143,66 @@
         "STIs",
         "Sex"
       ],
-      "image": "https://www.aidshilfe-ooe.at/wp-content/uploads/2024/11/aidshilfe-logo.jpg",
+      "image": "https://dfbxllyfbmmojxjxbhzv.supabase.co/storage/v1/object/public/location-images/locations/1774858037265-kicg43laqvs.jpg",
       "address": "Blütenstraße 15, Linz, Austria",
       "phone": "0732 2170",
       "email": "office@aidshilfe-ooe.at",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
       "additionalInfo": "Testung",
+      "updatedAt": "2026-03-30T00:00:00.000Z"
+    },
+    {
+      "id": 1,
+      "name": "Tower of London",
+      "position": [
+        51.5081,
+        -0.0759
+      ],
+      "categories": [
+        "Gesundheit"
+      ],
+      "description": "Historic castle and fortress",
+      "website": "https://www.hrp.org.uk/tower-of-london",
+      "tags": [
+        "Cruising"
+      ],
+      "image": "https://www.hrp.org.uk/assets/images/hrp-logo.svg",
+      "address": "St Katharine's & Wapping, London EC3N 4AB, United Kingdom",
+      "phone": "",
+      "email": "info@hrp.org.uk",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
+      "additionalInfo": "The Tower of London, officially Her Majesty's Royal Palace and Fortress of the Tower of London, is a historic castle and fortress located on the north bank of the River Thames in central London.",
+      "updatedAt": "2026-03-29T00:00:00.000Z"
+    },
+    {
+      "id": 19,
+      "name": "test import",
+      "position": [
+        48.3683754,
+        14.5143234
+      ],
+      "categories": [
+        "Cafe",
+        "Beratung"
+      ],
+      "description": "short description test",
+      "website": "https://ww.example.com",
+      "tags": [
+        "nonbinary",
+        "lgbtiqa*"
+      ],
+      "image": "data:image/svg+xml,%3c?xml%20version=%271.0%27%20encoding=%27UTF-8%27?%3e%3csvg%20id=%27Layer_1%27%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20566.93%20566.93%27%3e%3cdefs%3e%3cstyle%3e%20.cls-1%20{%20fill:%20%2385461e;%20}%20.cls-2%20{%20fill:%20%233d398d;%20}%20.cls-3%20{%20fill:%20%23fff;%20}%20.cls-4%20{%20fill:%20%23007e40;%20}%20.cls-5%20{%20fill:%20%23ffd107;%20}%20.cls-6%20{%20fill:%20%23a8348b;%20}%20.cls-7%20{%20fill:%20%23e96724;%20}%20.cls-8%20{%20fill:%20%2365c7f1;%20}%20.cls-9%20{%20fill:%20%237e4770;%20}%20.cls-10%20{%20fill:%20%23e21f26;%20}%20.cls-11%20{%20fill:%20%23fed600;%20}%20.cls-12%20{%20fill:%20%23ec7da7;%20}%20%3c/style%3e%3c/defs%3e%3cpath%20class=%27cls-2%27%20d=%27M524.65,176.35c-2.82-9.53-6.7-18.6-11.41-27.13h-251.12l67.26,67.26h200.81c.3-12.76-1.4-26.15-5.54-40.13Z%27/%3e%3cpath%20class=%27cls-6%27%20d=%27M513.23,149.21c-17.54-31.77-47.31-55.65-83.34-64.08-6.7-1.57-13.33-2.6-19.88-3.18h-24.34c-42.58,3.92-79.29,28.05-100.52,62.69-.78,1.28-2.59,1.28-3.37,0-18.51-30.19-48.77-52.38-84.43-60.19l64.76,64.76h251.12Z%27/%3e%3cpath%20class=%27cls-4%27%20d=%27M396.63,283.73h112.16c12.58-19.75,20.81-42.29,21.39-67.26h-200.81l67.26,67.26Z%27/%3e%3cpath%20class=%27cls-5%27%20d=%27M329.37,351h115.34c17.02-15.11,31.69-28.69,41.48-38.84,8.4-8.69,16.08-18.19,22.6-28.42h-112.16l-67.26,67.26Z%27/%3e%3cpath%20class=%27cls-7%27%20d=%27M262.11,418.26h103.99c26.34-21.98,54.79-46.12,78.61-67.26h-115.34l-67.26,67.26Z%27/%3e%3cpath%20class=%27cls-1%27%20d=%27M137.04,85.13c-3.79.89-7.48,2.01-11.13,3.23l195.38,195.38-128.12,128.12c6.97,5.84,13.83,11.55,20.48,17.07l145.19-145.19L157.05,81.94c-6.59.58-13.27,1.61-20.01,3.19Z%27/%3e%3cpath%20class=%27cls-8%27%20d=%27M321.05,283.73L125.73,88.42c-9.04,3.04-17.6,7.06-25.59,11.96l183.36,183.36-110.84,110.84c6.82,5.77,13.65,11.52,20.39,17.17l128.01-128.01Z%27/%3e%3cpath%20class=%27cls-12%27%20d=%27M100.12,100.39c-7.7,4.71-14.87,10.2-21.4,16.39l166.96,166.96-93.44,93.44c6.71,5.76,13.55,11.59,20.4,17.39l110.83-110.83L100.12,100.39Z%27/%3e%3cpath%20class=%27cls-3%27%20d=%27M61.21,137.06l146.67,146.67-75.88,75.88c6.54,5.73,13.31,11.6,20.24,17.55l93.44-93.44L78.72,116.78c-6.48,6.14-12.36,12.92-17.51,20.28Z%27/%3e%3cpath%20class=%27cls-10%27%20d=%27M234.35,446.02c-6.54-5.38,41.08,33.57,47.91,39.08.34.27.74.4,1.14.41h.13c.4-.02.8-.14,1.14-.41,6.83-5.51,41.71-33.71,81.43-66.85h-103.99l-27.77,27.77Z%27/%3e%3cpath%20d=%27M234.35,446.02l162.29-162.29L197.35,84.45c-12.83-2.81-26.37-3.73-40.3-2.51l201.79,201.79-134.52,134.52-10.67,10.67c7.22,5.99,14.15,11.72,20.69,17.1Z%27/%3e%3cpath%20class=%27cls-11%27%20d=%27M92.28,323.57c3.44.93,7.04,1.47,10.78,1.47,22.81,0,41.3-18.49,41.3-41.3s-18.49-41.3-41.3-41.3-41.3,18.49-41.3,41.3c0,2.09.21,4.13.51,6.14,5.56,7.92,11.79,15.36,18.48,22.28,3.31,3.42,7.22,7.28,11.54,11.41Z%27/%3e%3cpath%20class=%27cls-11%27%20d=%27M207.88,283.73L61.21,137.06c-8.28,11.83-14.72,25.08-18.92,39.29-11.3,38.18-4.42,71.97,11.66,100.42,3.4-24.12,24.06-42.69,49.11-42.69,27.42,0,49.66,22.23,49.66,49.66s-22.23,49.66-49.66,49.66c-.12,0-.23-.02-.34-.02,8.74,8.06,18.68,16.94,29.29,26.24l75.88-75.88Z%27/%3e%3cpath%20class=%27cls-9%27%20d=%27M152.71,283.73c0-27.42-22.23-49.66-49.66-49.66-25.05,0-45.72,18.57-49.11,42.69,2.55,4.51,5.34,8.87,8.31,13.1-.3-2.01-.51-4.05-.51-6.14,0-22.81,18.49-41.3,41.3-41.3s41.3,18.49,41.3,41.3-18.49,41.3-41.3,41.3c-3.73,0-7.33-.54-10.78-1.47,3.25,3.11,6.71,6.36,10.43,9.8.11,0,.23.02.34.02,27.42,0,49.66-22.23,49.66-49.66Z%27/%3e%3c/svg%3e",
+      "address": "Softwarepark 11, Hagenberg, Austria",
+      "phone": "",
+      "email": "test@example.com",
+      "instagram": "",
+      "facebook": "",
+      "additionalWebLinks": [],
+      "additionalInfo": "description with a [link](https://ww.example.com)",
       "updatedAt": "2026-03-29T00:00:00.000Z"
     }
   ]

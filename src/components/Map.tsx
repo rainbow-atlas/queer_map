@@ -3,9 +3,9 @@ import { MapContainer, TileLayer, Marker, useMap, Tooltip, useMapEvents } from '
 import 'leaflet/dist/leaflet.css';
 import { icon, type Icon as LeafletIcon } from 'leaflet';
 import { 
-  X, Globe, Navigation, Clock, MapPin, Phone, Mail, 
+  X, Globe, Navigation, MapPin, Phone, Mail, 
   Map as MapIcon, Satellite, Locate, Plus, Minus, Settings,
-  Building, Info, ExternalLink
+  Building, Info, ExternalLink, Instagram, Facebook, Link as LinkIcon
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import { useI18n } from '../i18n/I18nContext';
@@ -328,6 +328,7 @@ interface Location {
   id: number;
   name: string;
   position: [number, number];
+  categories: string[];
   description?: string;
   website: string;
   image: string;
@@ -335,9 +336,85 @@ interface Location {
   address?: string;
   phone?: string;
   email?: string;
+  instagram?: string;
+  facebook?: string;
+  additionalWebLinks?: string | string[];
   additionalInfo?: string;
   /** ISO 8601 date or datetime — when this location’s data was last changed */
   updatedAt?: string;
+}
+
+const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+const plainUrlPattern = /(https?:\/\/[^\s<]+)/g;
+
+function renderTextWithLinks(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let nodeIndex = 0;
+  const markdownMatches = Array.from(text.matchAll(markdownLinkPattern));
+
+  const pushPlainTextWithUrls = (plainText: string) => {
+    const lines = plainText.split('\n');
+    lines.forEach((line, lineIndex) => {
+      let lineLastIndex = 0;
+      for (const match of line.matchAll(plainUrlPattern)) {
+        const urlStart = match.index ?? 0;
+        const url = match[0];
+        if (urlStart > lineLastIndex) {
+          nodes.push(line.slice(lineLastIndex, urlStart));
+        }
+        nodes.push(
+          <a
+            key={`url-${nodeIndex++}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-700 hover:text-blue-800 underline break-words"
+          >
+            {url}
+          </a>
+        );
+        lineLastIndex = urlStart + url.length;
+      }
+
+      if (lineLastIndex < line.length) {
+        nodes.push(line.slice(lineLastIndex));
+      }
+      if (lineIndex < lines.length - 1) {
+        nodes.push(<br key={`br-${nodeIndex++}`} />);
+      }
+    });
+  };
+
+  for (const match of markdownMatches) {
+    const [fullMatch, label, url] = match;
+    const start = match.index ?? 0;
+    if (start > lastIndex) {
+      pushPlainTextWithUrls(text.slice(lastIndex, start));
+    }
+
+    nodes.push(
+      <a
+        key={`md-${nodeIndex++}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-700 hover:text-blue-800 underline break-words"
+      >
+        {label}
+      </a>
+    );
+    lastIndex = start + fullMatch.length;
+  }
+
+  if (lastIndex < text.length) {
+    pushPlainTextWithUrls(text.slice(lastIndex));
+  }
+
+  if (nodes.length === 0) {
+    return [text];
+  }
+  return nodes;
 }
 
 function formatLocationUpdatedAt(iso: string, locale: Locale): string {
@@ -347,6 +424,47 @@ function formatLocationUpdatedAt(iso: string, locale: Locale): string {
   return new Intl.DateTimeFormat(locale === 'de' ? 'de-AT' : 'en-GB', {
     dateStyle: 'medium',
   }).format(d);
+}
+
+function normalizeExternalUrl(value?: string): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function parseAdditionalWebLinks(value?: string | string[]): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => normalizeExternalUrl(entry))
+      .filter(Boolean);
+  }
+  if (typeof value !== 'string') return [];
+  return value
+    .split('\n')
+    .map((entry) => normalizeExternalUrl(entry))
+    .filter(Boolean);
+}
+
+function formatAddressForDisplay(address?: string): string {
+  if (!address) return '';
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length <= 2) return parts.join(', ');
+  const leading = parts.slice(0, -2);
+  const cityCountry = parts.slice(-2).join(', ');
+  return [...leading, cityCountry].join(',\n');
+}
+
+function formatPhoneDisplay(phone?: string): string {
+  if (!phone) return '';
+  const trimmed = phone.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('+')) return trimmed;
+  return `+${trimmed}`;
 }
 
 interface MapProps {
@@ -510,6 +628,16 @@ const Map: React.FC<MapProps> = ({
 
   const isTooltipOpen = (markerId: number) =>
     pinnedTooltipLocationId === markerId || hoveredMarkerId === markerId;
+
+  const socialLinks = selectedLocation
+    ? [
+        { id: 'instagram', label: 'Instagram', href: normalizeExternalUrl(selectedLocation.instagram), Icon: Instagram },
+        { id: 'facebook', label: 'Facebook', href: normalizeExternalUrl(selectedLocation.facebook), Icon: Facebook },
+      ].filter((item) => item.href)
+    : [];
+  const additionalWebLinks = selectedLocation
+    ? parseAdditionalWebLinks(selectedLocation.additionalWebLinks)
+    : [];
 
   return (
     <>
@@ -696,13 +824,13 @@ const Map: React.FC<MapProps> = ({
 
         {selectedLocation && (
           <div 
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-2 md:p-8"
+            className="fixed inset-0 z-[1002] flex items-start md:items-center justify-center p-2 md:p-8"
             onClick={handleCloseModal}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             
             <div 
-              className="relative bg-white w-full max-w-full md:max-w-4xl max-h-[calc(100vh-1rem)] md:max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              className="relative bg-white w-full max-w-full md:max-w-4xl max-h-[calc(100dvh-1rem)] md:max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div 
@@ -758,72 +886,89 @@ const Map: React.FC<MapProps> = ({
                 </div>
               </div>
               
-              <div className="relative flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-8">
+              <div className="relative flex-1 overflow-y-auto px-4 py-4 pb-6 md:px-8 md:py-8 md:pb-8">
                 {selectedLocation.additionalInfo && (
                   <p className="text-gray-600 mb-6 md:mb-10 text-sm md:text-base">
-                    {selectedLocation.additionalInfo}
+                    {renderTextWithLinks(selectedLocation.additionalInfo)}
                   </p>
                 )}
 
+                {(socialLinks.length > 0 || additionalWebLinks.length > 0) && (
+                  <div className={`${selectedLocation.additionalInfo ? 'mb-6 md:mb-10' : 'mb-6'}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-w-2xl">
+                    {socialLinks.map(({ id, label, href, Icon }) => (
+                      <a
+                        key={id}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex min-h-14 w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                      >
+                        <Icon className="w-4 h-4 text-gray-500 shrink-0" />
+                        <span className="font-semibold">{label}</span>
+                        <ExternalLink className="w-3.5 h-3.5 ml-auto text-gray-300 group-hover:text-blue-500 transition-colors shrink-0" />
+                      </a>
+                    ))}
+                    {additionalWebLinks.map((href, index) => (
+                      <a
+                        key={`additional-link-${index}`}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex min-h-14 w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                      >
+                        <LinkIcon className="w-4 h-4 text-gray-500 shrink-0" />
+                        <span className="font-medium break-all">{href}</span>
+                        <ExternalLink className="w-3.5 h-3.5 ml-auto text-gray-300 group-hover:text-blue-500 transition-colors shrink-0" />
+                      </a>
+                    ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-5 md:space-y-8">
-                  {(selectedLocation.phone || selectedLocation.email) && (
-                    <div className="flex items-start gap-4">
-                      <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{t('mapDetailContact')}</h3>
-                        <div className="mt-2 space-y-2">
-                          {selectedLocation.phone && (
-                            <a 
-                              href={`tel:${selectedLocation.phone}`}
-                              className="block text-gray-600 hover:text-blue-600 transition-colors"
-                            >
-                              {selectedLocation.phone}
-                            </a>
-                          )}
-                          {selectedLocation.email && (
-                            <a 
-                              href={`mailto:${selectedLocation.email}`}
-                              className="block text-gray-600 hover:text-blue-600 transition-colors"
-                            >
-                              {selectedLocation.email}
-                            </a>
-                          )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+                    {(selectedLocation.phone || selectedLocation.email) && (
+                      <div className="rounded-xl border border-gray-100 p-4 md:p-5 min-h-[144px]">
+                        <div className="flex items-center gap-2.5">
+                          <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                          <h3 className="text-sm font-semibold tracking-wide text-gray-900 uppercase leading-none">{t('mapDetailContact')}</h3>
+                        </div>
+                        <div className="mt-3.5 pl-6 space-y-1">
+                            {selectedLocation.phone && (
+                              <a 
+                                href={`tel:${selectedLocation.phone}`}
+                                className="block text-gray-700 leading-relaxed hover:text-blue-700 underline-offset-2 hover:underline transition-colors break-words"
+                              >
+                                {formatPhoneDisplay(selectedLocation.phone)}
+                              </a>
+                            )}
+                            {selectedLocation.email && (
+                              <a 
+                                href={`mailto:${selectedLocation.email}`}
+                                className="block text-gray-700 leading-relaxed hover:text-blue-700 underline-offset-2 hover:underline transition-colors break-all"
+                              >
+                                {selectedLocation.email}
+                              </a>
+                            )}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {selectedLocation.address && (
-                    <div className="flex items-start gap-4">
-                      <Building className="w-5 h-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{t('mapDetailAddress')}</h3>
-                        <p className="mt-2 text-gray-600">{selectedLocation.address}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(() => {
-                    if (!selectedLocation.updatedAt) return null;
-                    const formatted = formatLocationUpdatedAt(
-                      selectedLocation.updatedAt,
-                      locale
-                    );
-                    if (!formatted) return null;
-                    return (
-                      <div className="flex items-start gap-4">
-                        <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <h3 className="font-medium text-gray-900">{t('mapDetailUpdatedAt')}</h3>
-                          <p className="mt-2 text-gray-600">{formatted}</p>
+                    {selectedLocation.address && (
+                      <div className="rounded-xl border border-gray-100 p-4 md:p-5 min-h-[144px]">
+                        <div className="flex items-center gap-2.5">
+                          <Building className="w-4 h-4 text-gray-400 shrink-0" />
+                          <h3 className="text-sm font-semibold tracking-wide text-gray-900 uppercase leading-none">{t('mapDetailAddress')}</h3>
                         </div>
-                      </div>
-                    );
-                  })()}
+                        <p className="mt-3.5 pl-6 text-gray-700 leading-relaxed whitespace-pre-line break-words">{formatAddressForDisplay(selectedLocation.address)}</p>
+                        </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="mt-6 md:mt-10 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-0 md:justify-between">
-                  <div className="flex-1 flex flex-wrap gap-2">
+                <div className="mt-6 md:mt-10">
+                  <div className="flex flex-wrap gap-2">
                     {selectedLocation.tags?.map((tag, index) => {
                       const colorIndex = index % rainbowColors.length;
                       const { bg, text } = rainbowColors[colorIndex];
@@ -842,19 +987,35 @@ const Map: React.FC<MapProps> = ({
                       );
                     })}
                   </div>
+                </div>
 
-                  <a
-                    href={selectedLocation.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors md:ml-6"
-                  >
-                    <Globe className="w-4 h-4" />
-                    <span>{t('mapVisitWebsite')}</span>
-                    <ExternalLink className="w-3 h-3 ml-1" />
-                  </a>
+                <div className="mt-6 md:mt-8 pr-40 md:pr-56">
+                  {(() => {
+                    if (!selectedLocation.updatedAt) return null;
+                    const formatted = formatLocationUpdatedAt(
+                      selectedLocation.updatedAt,
+                      locale
+                    );
+                    if (!formatted) return null;
+                    return (
+                      <p className="text-xs text-gray-500 text-left">
+                        {t('mapDetailUpdatedAt')}: {formatted}
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
+
+              <a
+                href={selectedLocation.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute right-4 bottom-4 md:right-8 md:bottom-6 inline-flex items-center gap-2 px-4 py-2.5 text-blue-700 rounded-lg border border-blue-200 hover:border-blue-300 hover:text-blue-800 transition-colors"
+              >
+                <Globe className="w-4 h-4" />
+                <span>{t('mapVisitWebsite')}</span>
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
             </div>
           </div>
         )}

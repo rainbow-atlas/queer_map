@@ -207,19 +207,26 @@ The public map frontend **does not query Supabase at runtime**. Instead, it uses
   - Connects to Supabase using:
     - `SUPABASE_URL`
     - `SUPABASE_ANON_KEY`
+    - optional `SUPABASE_LEGAL_TABLE` (defaults to `app_settings`)
   - Runs:
     ```ts
     supabase
       .from('locations')
       .select('id,name,latitude,longitude,description,website,tags,image,address,phone,email,category,additional_info');
     ```
+  - Also joins category names/colors through `location_categories` + `categories`.
   - Transforms rows into the structure expected by the React app:
     ```ts
     {
-      [category: string]: Array<{
+      categories: Record<string, string>; // fixed category colors
+      legal?: {
+        impressum?: { de?: string; en?: string }; // optional DB-backed imprint HTML
+      };
+      locations: Array<{
         id: number;
         name: string;
         position: [number, number]; // [latitude, longitude]
+        categories: string[];
         description?: string;
         website: string;
         tags?: string[];
@@ -228,6 +235,7 @@ The public map frontend **does not query Supabase at runtime**. Instead, it uses
         phone?: string;
         email?: string;
         additionalInfo?: string;
+        updatedAt?: string;
       }>;
     }
     ```
@@ -238,6 +246,7 @@ The public map frontend **does not query Supabase at runtime**. Instead, it uses
 - File: `.env` (create from `.env.example`)
   - `SUPABASE_URL="https://your-project-id.supabase.co"`
   - `SUPABASE_ANON_KEY="your-anon-key-here"`
+  - optional `SUPABASE_LEGAL_TABLE="app_settings"`
 
 These are **only used at build time** by the Node script, not shipped to the browser.
 

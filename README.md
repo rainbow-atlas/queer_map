@@ -66,8 +66,11 @@ Open the URL Vite prints (typically `http://localhost:5173`). The app loads loca
 
 ## Data flow (Supabase → static JSON)
 
-1. **Source**: The script `scripts/fetch-locations.mjs` reads `locations` and joins category names via `location_categories` / `categories`. It falls back to the legacy `category` column when no junction rows exist.
-2. **Output**: `{ "locations": [ … ] }` written to `public/locations.json`. Each item includes `id`, `name`, `position` (`[lat, lng]`), `categories` (array), optional fields like `description`, `website`, `tags`, `image`, `address`, `phone`, `email`, `additionalInfo`, `updatedAt`.
+1. **Source**: The script `scripts/fetch-locations.mjs` reads `locations` and joins category names/colors via `location_categories` / `categories`. It falls back to the legacy `category` column when no junction rows exist.
+2. **Output**: `public/locations.json` with:
+   - `categories`: `{ [categoryName]: color }` for fixed category colors
+   - `locations`: array of map entries (`id`, `name`, `position`, `categories`, optional `description`, `website`, `tags`, `image`, `address`, `phone`, `email`, `additionalInfo`, `updatedAt`)
+   - optional `legal.impressum.de/en` (loaded from a legal settings table when accessible)
 3. **Runtime**: The SPA only `fetch`es that JSON file.
 
 Details and schema notes: [docs/docs.md](docs/docs.md).
@@ -105,6 +108,7 @@ Workflow: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
 
 - **Trigger**: Push to `main`, or manual **workflow_dispatch**.
 - **Secrets** (repository): `SUPABASE_URL`, `SUPABASE_ANON_KEY` — used during `npm run build` so `locations.json` is fresh in `dist/`.
+- **Optional repo variable**: `SUPABASE_LEGAL_TABLE` (defaults to `app_settings`) for DB-backed imprint import.
 - **Artifact**: Contents of `dist/` uploaded to GitHub Pages.
 
 For production URLs under `https://<user>.github.io/<repo>/`, the default `base: '/queer_map/'` matches the workflow comment. Custom-domain builds often need `VITE_BASE_PATH=/` in the workflow step—see [docs/README.md](docs/README.md).

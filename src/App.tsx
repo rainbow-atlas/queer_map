@@ -5,17 +5,84 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ChevronLeft, X, Shield, Scale, Cookie, Menu } from 'lucide-react';
 import logo from './assets/logo.svg';
 import { useI18n } from './i18n/I18nContext';
-import { impressumLines } from './i18n/translations';
+import { impressumLine } from './i18n/translations';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+function buildFallbackImpressumMarkdown(locale: 'de' | 'en'): string {
+  const line = (key: Parameters<typeof impressumLine>[1]) => impressumLine(locale, key);
+  return [
+    line('stand'),
+    '',
+    `## ${line('tmgHeading')}`,
+    line('addressBlock'),
+    '',
+    `## ${line('contactHeading')}`,
+    `${line('phoneLabel')}: +49 (0) 123 456 789`,
+    `${line('emailLabel')}: info@musterfirma.de`,
+    '',
+    `## ${line('representedHeading')}`,
+    line('representedBody'),
+    '',
+    `## ${line('registerHeading')}`,
+    line('registerBody'),
+    '',
+    `## ${line('vatHeading')}`,
+    line('vatBody'),
+    '',
+    `## ${line('contentRespHeading')}`,
+    line('contentRespBody'),
+    '',
+    `## ${line('disputeHeading')}`,
+    `${line('disputeBodyBefore')} [ec.europa.eu/consumers/odr](https://ec.europa.eu/consumers/odr)${line('disputeBodyAfter')}`,
+    '',
+    `## ${line('liabilityHeading')}`,
+    line('liabilityBody'),
+    '',
+    `## ${line('copyrightHeading')}`,
+    line('copyrightBody'),
+  ].join('\n');
+}
+
+function normalizeImpressumToMarkdown(raw: string): string {
+  const input = raw.trim();
+  if (!input) return '';
+
+  // If it already looks like markdown/plain text, keep it as-is.
+  if (!/<[a-z][\s\S]*>/i.test(input)) {
+    return input;
+  }
+
+  return input
+    .replace(/\r\n/g, '\n')
+    .replace(/<div>\s*(<br\s*\/?>)?\s*<\/div>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\s*(b|strong)\s*>([\s\S]*?)<\s*\/\s*(b|strong)\s*>/gi, '**$2**')
+    .replace(/<\s*(i|em)\s*>([\s\S]*?)<\s*\/\s*(i|em)\s*>/gi, '*$2*')
+    .replace(/<\s*div\s*>/gi, '')
+    .replace(/<\s*\/\s*div\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 // Legal Modal Component
 const LegalModal: React.FC<{
   onClose: () => void;
   type: 'dsgvo' | 'impressum';
-}> = ({ onClose, type }) => {
-  const { t, ti, locale } = useI18n();
+  impressumContent?: string;
+}> = ({ onClose, type, impressumContent }) => {
+  const { t, locale } = useI18n();
   const title =
     type === 'dsgvo' ? t('legalPrivacyModalTitle') : t('legalImprintModalTitle');
-  const vatBodyLines = impressumLines(locale, 'vatBody');
+  const fallbackImpressumMarkdown = buildFallbackImpressumMarkdown(locale);
+  const resolvedImpressumMarkdown = normalizeImpressumToMarkdown(
+    impressumContent || fallbackImpressumMarkdown
+  );
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4">
@@ -222,133 +289,23 @@ const LegalModal: React.FC<{
               ` }} />
               </>
             ) : (
-              <div className="not-prose max-w-[65ch] mx-auto text-gray-700">
-                <p className="text-sm text-gray-500 mb-8 pb-6 border-b border-gray-100">
-                  {ti('stand')}
-                </p>
-
-                <div className="space-y-8">
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('tmgHeading')}
-                    </h3>
-                    <address className="not-italic leading-relaxed text-[15px]">
-                      {impressumLines(locale, 'addressBlock').map((line, i) => (
-                        <span key={i}>
-                          {i > 0 && <br />}
-                          {line}
-                        </span>
-                      ))}
-                    </address>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('contactHeading')}
-                    </h3>
-                    <dl className="space-y-1.5 text-[15px] leading-relaxed">
-                      <div className="flex flex-col sm:flex-row sm:gap-2">
-                        <dt className="text-gray-500 shrink-0 sm:min-w-[5rem]">{ti('phoneLabel')}</dt>
-                        <dd>+49 (0) 123 456 789</dd>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:gap-2">
-                        <dt className="text-gray-500 shrink-0 sm:min-w-[5rem]">{ti('emailLabel')}</dt>
-                        <dd>
-                          <a
-                            href="mailto:info@musterfirma.de"
-                            className="text-pink-600 hover:text-pink-700 underline-offset-2 hover:underline"
-                          >
-                            info@musterfirma.de
-                          </a>
-                        </dd>
-                      </div>
-                    </dl>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('representedHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">
-                      {impressumLines(locale, 'representedBody').map((line, i) => (
-                        <span key={i}>
-                          {i > 0 && <br />}
-                          {line}
-                        </span>
-                      ))}
-                    </p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('registerHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">
-                      {impressumLines(locale, 'registerBody').map((line, i) => (
-                        <span key={i}>
-                          {i > 0 && <br />}
-                          {line}
-                        </span>
-                      ))}
-                    </p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('vatHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">
-                      {vatBodyLines[0]}
-                      <br />
-                      <span className="font-medium text-gray-900">{vatBodyLines[1]}</span>
-                    </p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('contentRespHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">
-                      {impressumLines(locale, 'contentRespBody').map((line, i) => (
-                        <span key={i}>
-                          {i > 0 && <br />}
-                          {line}
-                        </span>
-                      ))}
-                    </p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('disputeHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">
-                      {ti('disputeBodyBefore')}{' '}
-                      <a
-                        href="https://ec.europa.eu/consumers/odr/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-pink-600 hover:text-pink-700 underline-offset-2 hover:underline break-all sm:break-normal"
-                      >
-                        ec.europa.eu/consumers/odr
-                      </a>
-                      {ti('disputeBodyAfter')}
-                    </p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('liabilityHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">{ti('liabilityBody')}</p>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight mb-3">
-                      {ti('copyrightHeading')}
-                    </h3>
-                    <p className="leading-relaxed text-[15px]">{ti('copyrightBody')}</p>
-                  </section>
+              <div className="max-w-[65ch] mx-auto px-4 text-gray-700">
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ ...props }) => (
+                        <a
+                          {...props}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-600 hover:text-pink-700 underline-offset-2 hover:underline break-all sm:break-normal"
+                        />
+                      ),
+                    }}
+                  >
+                    {resolvedImpressumMarkdown}
+                  </ReactMarkdown>
                 </div>
               </div>
             )}
@@ -417,26 +374,127 @@ interface AppLocation {
   address?: string;
   phone?: string;
   email?: string;
+  instagram?: string;
+  facebook?: string;
+  additionalWebLinks?: string | string[];
   additionalInfo?: string;
   updatedAt?: string;
 }
 
-/** New format: `{ locations: [...] }`. Legacy: `{ "Category": [ {...} ], ... }` (categories default from bucket key). */
-function normalizeLocationsJson(raw: unknown): { locations: AppLocation[] } {
+interface LegalContent {
+  impressum?: {
+    de?: string;
+    en?: string;
+  };
+}
+
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.trim().length > 0;
+}
+
+function normalizeCategoryNameAndColor(
+  category: unknown
+): { name: string; color?: string } | null {
+  if (isNonEmptyString(category)) {
+    return { name: category };
+  }
+  if (!category || typeof category !== 'object') {
+    return null;
+  }
+  const c = category as Record<string, unknown>;
+  const name = isNonEmptyString(c.name)
+    ? c.name
+    : isNonEmptyString(c.label)
+      ? c.label
+      : isNonEmptyString(c.title)
+        ? c.title
+        : null;
+  if (!name) return null;
+  const color = isNonEmptyString(c.color) ? c.color : undefined;
+  return { name, color };
+}
+
+/** New format: `{ locations: [...], categories?: [...] }`. Legacy: `{ "Category": [ {...} ], ... }`. */
+function normalizeLocationsJson(
+  raw: unknown
+): {
+  locations: AppLocation[];
+  categoryColors: Record<string, string>;
+  legalContent: LegalContent;
+} {
   if (!raw || typeof raw !== 'object') {
-    return { locations: [] };
+    return { locations: [], categoryColors: {}, legalContent: {} };
   }
+  const categoryColors: Record<string, string> = {};
   const o = raw as Record<string, unknown>;
-  if (Array.isArray(o.locations)) {
-    const list = (o.locations as AppLocation[]).map((loc) => ({
-      ...loc,
-      categories:
-        Array.isArray(loc.categories) && loc.categories.length > 0
-          ? loc.categories
-          : ['Other'],
-    }));
-    return { locations: list };
+  const legalContent: LegalContent = {};
+  const legal = o.legal as Record<string, unknown> | undefined;
+  const legalImpressum =
+    legal && typeof legal.impressum === 'object'
+      ? (legal.impressum as Record<string, unknown>)
+      : undefined;
+  const topImpressum =
+    o.impressum && typeof o.impressum === 'object'
+      ? (o.impressum as Record<string, unknown>)
+      : undefined;
+  const impressumDe =
+    (typeof legalImpressum?.de === 'string' ? legalImpressum.de : undefined) ??
+    (typeof topImpressum?.de === 'string' ? topImpressum.de : undefined) ??
+    (typeof o.impressumDe === 'string' ? o.impressumDe : undefined);
+  const impressumEn =
+    (typeof legalImpressum?.en === 'string' ? legalImpressum.en : undefined) ??
+    (typeof topImpressum?.en === 'string' ? topImpressum.en : undefined) ??
+    (typeof o.impressumEn === 'string' ? o.impressumEn : undefined);
+  if (impressumDe || impressumEn) {
+    legalContent.impressum = {
+      ...(impressumDe ? { de: impressumDe } : {}),
+      ...(impressumEn ? { en: impressumEn } : {}),
+    };
   }
+  const topCategories = o.categories;
+
+  if (Array.isArray(topCategories)) {
+    for (const cat of topCategories) {
+      const parsed = normalizeCategoryNameAndColor(cat);
+      if (parsed?.color) categoryColors[parsed.name] = parsed.color;
+    }
+  } else if (topCategories && typeof topCategories === 'object') {
+    for (const [name, color] of Object.entries(topCategories as Record<string, unknown>)) {
+      if (isNonEmptyString(name) && isNonEmptyString(color)) {
+        categoryColors[name] = color;
+      }
+    }
+  }
+
+  if (Array.isArray(o.locations)) {
+    const list = (o.locations as Record<string, unknown>[]).map((loc) => ({
+      ...(loc as unknown as AppLocation),
+      categories: (() => {
+        if (!Array.isArray(loc.categories)) return ['Other'];
+        const parsed = loc.categories
+          .map((entry) => normalizeCategoryNameAndColor(entry))
+          .filter((entry): entry is { name: string; color?: string } => entry !== null);
+        for (const entry of parsed) {
+          if (entry.color) categoryColors[entry.name] = entry.color;
+        }
+        return parsed.length > 0 ? parsed.map((entry) => entry.name) : ['Other'];
+      })(),
+      instagram: isNonEmptyString(loc.instagram) ? loc.instagram : undefined,
+      facebook: isNonEmptyString(loc.facebook) ? loc.facebook : undefined,
+      additionalWebLinks:
+        isNonEmptyString(loc.additionalWebLinks)
+          ? loc.additionalWebLinks
+          : isNonEmptyString(loc.additional_web_links)
+            ? loc.additional_web_links
+            : Array.isArray(loc.additionalWebLinks)
+              ? (loc.additionalWebLinks as string[])
+              : Array.isArray(loc.additional_web_links)
+                ? (loc.additional_web_links as string[])
+                : undefined,
+    }));
+    return { locations: list, categoryColors, legalContent };
+  }
+
   const locations: AppLocation[] = [];
   for (const [bucketKey, locs] of Object.entries(o)) {
     if (!Array.isArray(locs)) continue;
@@ -445,15 +503,32 @@ function normalizeLocationsJson(raw: unknown): { locations: AppLocation[] } {
       const L = loc as Record<string, unknown>;
       const legacyCats = L.categories;
       const categories = Array.isArray(legacyCats)
-        ? (legacyCats as string[]).filter((c): c is string => typeof c === 'string' && c.length > 0)
-        : [bucketKey];
+        ? legacyCats
+            .map((entry) => normalizeCategoryNameAndColor(entry))
+            .filter((entry): entry is { name: string; color?: string } => entry !== null)
+        : [{ name: bucketKey }];
+      for (const entry of categories) {
+        if (entry.color) categoryColors[entry.name] = entry.color;
+      }
       locations.push({
         ...(L as unknown as AppLocation),
-        categories,
+        categories: categories.length > 0 ? categories.map((entry) => entry.name) : [bucketKey],
+        instagram: isNonEmptyString(L.instagram) ? L.instagram : undefined,
+        facebook: isNonEmptyString(L.facebook) ? L.facebook : undefined,
+        additionalWebLinks:
+          isNonEmptyString(L.additionalWebLinks)
+            ? L.additionalWebLinks
+            : isNonEmptyString(L.additional_web_links)
+              ? L.additional_web_links
+              : Array.isArray(L.additionalWebLinks)
+                ? (L.additionalWebLinks as string[])
+                : Array.isArray(L.additional_web_links)
+                  ? (L.additional_web_links as string[])
+                  : undefined,
       });
     }
   }
-  return { locations };
+  return { locations, categoryColors, legalContent };
 }
 
 /** Same rules as the sidebar list: category, tags (OR), and search text. */
@@ -523,7 +598,7 @@ function fitMapBoundsToLocations(
 }
 
 function App() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [locations, setLocations] = useState<AppLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -538,6 +613,8 @@ function App() {
   const [hideMapZoom, setHideMapZoom] = useState(false);
   const [hideMapSettings, setHideMapSettings] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
+  const [dbCategoryColors, setDbCategoryColors] = useState<Record<string, string>>({});
+  const [dbLegalContent, setDbLegalContent] = useState<LegalContent>({});
   /** Set when URL contains ?location=&lt;id&gt; so the map skips fit-all and opens the pin. */
   const [deepLinkLocationId, setDeepLinkLocationId] = useState<number | null>(null);
   const [deepLinkLocationDetail, setDeepLinkLocationDetail] = useState<'modal' | 'preview'>('modal');
@@ -651,8 +728,10 @@ function App() {
           throw new Error('Failed to load locations.json');
         }
         const raw = await response.json();
-        const { locations: next } = normalizeLocationsJson(raw);
+        const { locations: next, categoryColors, legalContent } = normalizeLocationsJson(raw);
         setLocations(next);
+        setDbCategoryColors(categoryColors);
+        setDbLegalContent(legalContent);
 
         // After data is loaded, set the category from URL if it exists
         const params = new URLSearchParams(window.location.search);
@@ -735,18 +814,19 @@ function App() {
     return Array.from(s).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
   }, [locations]);
 
-  /**
-   * Same hue ladder as sidebar cards (`getPastelColor`: hsl(hue, 35%, 97%)).
-   * Pins use lower lightness so the tint is visible on map tiles (97% reads as white).
-   */
   const categoryPinColors = useMemo(() => {
     const n = Math.max(allCategories.length, 1);
     return allCategories.reduce((acc, category, index) => {
+      const dbColor = dbCategoryColors[category];
+      if (isNonEmptyString(dbColor)) {
+        acc[category] = dbColor;
+        return acc;
+      }
       const hue = (index / n) * 360;
       acc[category] = `hsl(${hue}, 38%, 72%)`;
       return acc;
     }, {} as Record<string, string>);
-  }, [allCategories]);
+  }, [allCategories, dbCategoryColors]);
 
   // Calculate initial map center and bounds
   const allLocations = locations;
@@ -901,6 +981,11 @@ function App() {
     );
   }
 
+  const dbImpressum =
+    (locale === 'de'
+      ? dbLegalContent.impressum?.de || dbLegalContent.impressum?.en
+      : dbLegalContent.impressum?.en || dbLegalContent.impressum?.de) || undefined;
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Desktop Header */}
@@ -1011,6 +1096,7 @@ function App() {
                   onTagsChange={handleTagsChange}
                   selectedCategory={selectedCategory}
                   onCategoryChange={handleCategoryChange}
+                  categoryColors={categoryPinColors}
                 />
               </div>
 
@@ -1069,6 +1155,7 @@ function App() {
                     onTagsChange={handleTagsChange}
                     selectedCategory={selectedCategory}
                     onCategoryChange={handleCategoryChange}
+                    categoryColors={categoryPinColors}
                   />
                 </div>
               </div>
@@ -1168,7 +1255,11 @@ function App() {
         <LegalModal type="dsgvo" onClose={() => setLegalModal(null)} />
       )}
       {legalModal === 'impressum' && (
-        <LegalModal type="impressum" onClose={() => setLegalModal(null)} />
+        <LegalModal
+          type="impressum"
+          onClose={() => setLegalModal(null)}
+          impressumContent={dbImpressum}
+        />
       )}
 
       {/* Cookie Banner */}

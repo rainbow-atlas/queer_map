@@ -18,6 +18,8 @@ interface SidebarProps {
   locations: Location[];
   /** All category names (e.g. for the filter dropdown), sorted */
   allCategories: string[];
+  /** Fixed category colors coming from data source */
+  categoryColors?: Record<string, string>;
   onLocationSelect: (location: Location) => void;
   isCollapsed: boolean;
   searchTerm: string;
@@ -42,15 +44,70 @@ const getPastelColor = (index: number, total: number) => {
   return `hsl(${hue}, 35%, 97%)`;
 };
 
-// Function to create hover color
-const getHoverColor = (baseColor: string) => {
-  const hue = baseColor.match(/\d+/)?.[0];
-  return `hsl(${hue}, 40%, 95%)`;
+const CARD_OPACITY = 0.2;
+
+const clampCardColorOpacity = (color: string): string => {
+  const trimmed = color.trim();
+
+  // rgb()/rgba() -> force a consistent 50% opacity
+  const rgbMatch = trimmed.match(/^rgba?\((.+)\)$/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(',').map((x) => x.trim());
+    if (parts.length >= 3) {
+      const r = parts[0];
+      const g = parts[1];
+      const b = parts[2];
+      return `rgba(${r}, ${g}, ${b}, ${CARD_OPACITY})`;
+    }
+  }
+
+  // hsl()/hsla() -> keep behavior aligned with rgb colors
+  const hslMatch = trimmed.match(/^hsla?\((.+)\)$/i);
+  if (hslMatch) {
+    const parts = hslMatch[1].split(',').map((x) => x.trim());
+    if (parts.length >= 3) {
+      const h = parts[0];
+      const s = parts[1];
+      const l = parts[2];
+      return `hsla(${h}, ${s}, ${l}, ${CARD_OPACITY})`;
+    }
+  }
+
+  // #RGBA / #RRGGBBAA -> force alpha channel to 50%
+  if (/^#[0-9a-f]{4}$/i.test(trimmed) || /^#[0-9a-f]{8}$/i.test(trimmed)) {
+    const hasShortAlpha = trimmed.length === 5;
+    const safeAlphaHex = Math.round(CARD_OPACITY * 255)
+      .toString(16)
+      .padStart(2, '0');
+
+    if (hasShortAlpha) {
+      return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}${safeAlphaHex}`;
+    }
+    return `${trimmed.slice(0, 7)}${safeAlphaHex}`;
+  }
+
+  // #RGB / #RRGGBB -> convert to rgba(..., 0.2)
+  if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
+    const r = Number.parseInt(`${trimmed[1]}${trimmed[1]}`, 16);
+    const g = Number.parseInt(`${trimmed[2]}${trimmed[2]}`, 16);
+    const b = Number.parseInt(`${trimmed[3]}${trimmed[3]}`, 16);
+    return `rgba(${r}, ${g}, ${b}, ${CARD_OPACITY})`;
+  }
+  if (/^#[0-9a-f]{6}$/i.test(trimmed)) {
+    const r = Number.parseInt(trimmed.slice(1, 3), 16);
+    const g = Number.parseInt(trimmed.slice(3, 5), 16);
+    const b = Number.parseInt(trimmed.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${CARD_OPACITY})`;
+  }
+
+  // Colors without alpha are already fully opaque.
+  return trimmed;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   locations,
   allCategories,
+  categoryColors = {},
   onLocationSelect,
   isCollapsed,
   searchTerm,
@@ -71,12 +128,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const [isMobileView, setIsMobileView] = useState(false);
 
-  const categoryColors = useMemo(() => {
+  const computedCategoryColors = useMemo(() => {
     return allCategories.reduce((acc, category, index) => {
-      acc[category] = getPastelColor(index, allCategories.length);
+      acc[category] = categoryColors[category] ?? getPastelColor(index, allCategories.length);
       return acc;
     }, {} as Record<string, string>);
-  }, [allCategories]);
+  }, [allCategories, categoryColors]);
 
   // Add window resize listener
   useEffect(() => {
@@ -132,11 +189,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const mainCategoryColor = (location: Location) => {
     const main = location.categories[0] ?? 'Other';
-    return categoryColors[main] ?? getPastelColor(0, 1);
+    const rawColor = computedCategoryColors[main] ?? getPastelColor(0, 1);
+    return clampCardColorOpacity(rawColor);
   };
-
-  const mainHoverColor = (location: Location) =>
-    getHoverColor(mainCategoryColor(location));
 
   return (
     <div className="h-full flex flex-col">
@@ -359,7 +414,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   `}
                   style={{
                     background: mainCategoryColor(location),
-                    '--hover-bg': mainHoverColor(location)
                   } as React.CSSProperties}
                 >
                   <div className="flex gap-3">

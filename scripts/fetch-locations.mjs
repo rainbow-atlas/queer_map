@@ -12,6 +12,7 @@ async function main() {
 
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_ANON_KEY;
+  const legalTable = process.env.SUPABASE_LEGAL_TABLE || 'app_settings';
 
   if (!url || !key) {
     console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables.');
@@ -20,24 +21,7 @@ async function main() {
 
   const supabase = createClient(url, key);
 
-  const { data: rows, error: locError } = await supabase.from('locations').select(
-    `
-        id,
-        name,
-        latitude,
-        longitude,
-        description,
-        website,
-        tags,
-        image,
-        address,
-        phone,
-        email,
-        category,
-        additional_info,
-        last_checked
-      `
-  );
+  const { data: rows, error: locError } = await supabase.from('locations').select('*');
 
   if (locError) {
     console.error('Failed to fetch locations from Supabase:', locError.message);
@@ -50,7 +34,7 @@ async function main() {
       `
       location_id,
       created_at,
-      categories ( name )
+      categories ( name, color )
     `
     );
 
@@ -59,8 +43,69 @@ async function main() {
     process.exit(1);
   }
 
+  // Optional legal/imprint content from DB (if table is exposed to the anon key)
+  let impressumDe = '';
+  let impressumEn = '';
+  const { data: settingsRows, error: settingsError } = await supabase
+    .from(legalTable)
+    .select('*')
+    .limit(200);
+  if (settingsError) {
+    console.warn(`Skipping legal import from "${legalTable}": ${settingsError.message}`);
+  }
+  if (!settingsError && Array.isArray(settingsRows)) {
+    for (const row of settingsRows) {
+      const obj = row && typeof row === 'object' ? row : {};
+      const key =
+        typeof obj.key === 'string'
+          ? obj.key.trim().toLowerCase()
+          : typeof obj.name === 'string'
+            ? obj.name.trim().toLowerCase()
+            : typeof obj.slug === 'string'
+              ? obj.slug.trim().toLowerCase()
+              : '';
+      const value =
+        typeof obj.value === 'string'
+          ? obj.value
+          : typeof obj.content === 'string'
+            ? obj.content
+            : typeof obj.text === 'string'
+              ? obj.text
+              : '';
+      const locale =
+        typeof obj.locale === 'string'
+          ? obj.locale.trim().toLowerCase()
+          : typeof obj.lang === 'string'
+            ? obj.lang.trim().toLowerCase()
+            : '';
+
+      if (!impressumDe && typeof obj.impressum_de === 'string' && obj.impressum_de.trim()) {
+        impressumDe = obj.impressum_de;
+      }
+      if (!impressumEn && typeof obj.impressum_en === 'string' && obj.impressum_en.trim()) {
+        impressumEn = obj.impressum_en;
+      }
+
+      if (!value || !key) continue;
+
+      const isImpressumKey =
+        key.includes('impressum') || key.includes('imprint') || key === 'legal_imprint';
+      if (!isImpressumKey) continue;
+
+      if (!impressumDe && (key.endsWith('_de') || key.includes('.de') || locale === 'de')) {
+        impressumDe = value;
+      } else if (!impressumEn && (key.endsWith('_en') || key.includes('.en') || locale === 'en')) {
+        impressumEn = value;
+      } else if (!impressumDe) {
+        impressumDe = value;
+      }
+    }
+  }
+
   /** @type {Map<number, string[]>} */
   const categoriesByLocation = new Map();
+  /** @type {Record<string, string>} */
+  const categoryColors = {};
 
   const sortedLinks = [...(linkRows ?? [])].sort((a, b) => {
     if (a.location_id !== b.location_id) {
@@ -75,6 +120,11 @@ async function main() {
     const rawName = link.categories?.name;
     const name = typeof rawName === 'string' ? rawName.trim() : '';
     if (!name) continue;
+    const rawColor = link.categories?.color;
+    const color = typeof rawColor === 'string' ? rawColor.trim() : '';
+    if (color) {
+      categoryColors[name] = color;
+    }
     const list = categoriesByLocation.get(link.location_id) ?? [];
     list.push(name);
     categoriesByLocation.set(link.location_id, list);
@@ -116,6 +166,14 @@ async function main() {
       address: row.address ?? undefined,
       phone: row.phone ?? undefined,
       email: row.email ?? undefined,
+      instagram: row.instagram ?? undefined,
+      facebook: row.facebook ?? undefined,
+      additionalWebLinks:
+        row.additional_web_links ??
+        row.additional_weblinks ??
+        row.additional_links ??
+        row.web_links ??
+        undefined,
       additionalInfo: row.additional_info ?? undefined,
       ...(updatedAt ? { updatedAt } : {}),
     });
@@ -128,7 +186,27 @@ async function main() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  fs.writeFileSync(outputFile, JSON.stringify({ locations }, null, 2), 'utf8');
+  fs.writeFileSync(
+    outputFile,
+    JSON.stringify(
+      {
+        categories: categoryColors,
+        legal:
+          impressumDe || impressumEn
+            ? {
+                impressum: {
+                  ...(impressumDe ? { de: impressumDe } : {}),
+                  ...(impressumEn ? { en: impressumEn } : {}),
+                },
+              }
+            : undefined,
+        locations,
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
 
   console.log(`Wrote ${locations.length} locations to ${outputFile}`);
 }
